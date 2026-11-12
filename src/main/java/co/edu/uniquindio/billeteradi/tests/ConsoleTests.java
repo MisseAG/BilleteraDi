@@ -24,12 +24,16 @@ public final class ConsoleTests {
     }
 
     public static void main(String[] args) {
+        System.out.println("=== TESTS DE REPOSITORIO ===");
         repositoryChecks();
+        System.out.println();
+        System.out.println("=== TESTS DE SERVICIO ===");
         serviceChecks();
         System.out.println("OK: " + checks + " verificaciones pasaron.");
     }
 
     private static void repositoryChecks() {
+        System.out.println("-- Usuarios: altas, consultas y protección de datos --");
         RepositorioMemoria repo = new RepositorioMemoria();
         Usuario first = new Usuario("U1", "Ana");
         check(repo.agregarUsuario(first), "agrega usuario");
@@ -40,6 +44,7 @@ public final class ConsoleTests {
         check(repo.listarUsuarios().get(0) == first, "conserva orden de usuarios");
         expect(UnsupportedOperationException.class, () -> repo.listarUsuarios().clear(), "usuarios de solo lectura");
 
+        System.out.println("-- Billeteras: altas, duplicados e índices --");
         Billetera orphan = new Billetera("BIL-0001", "NOEXISTE", "Ahorro", TipoBilletera.AHORRO);
         expect(IllegalArgumentException.class, () -> repo.agregarBilletera(orphan), "rechaza billetera huérfana");
         check(repo.totalBilleteras() == 0, "no guarda billetera huérfana");
@@ -60,6 +65,7 @@ public final class ConsoleTests {
         RepositorioMemoria repo = new RepositorioMemoria();
         UsuarioService service = new UsuarioService(repo);
 
+        System.out.println("-- Usuarios: registro y edición --");
         Usuario user = service.registrar(" U1 ", "Ana");
         check("U1".equals(user.getId()), "normaliza id");
         check(user.isActivo() && user.getPuntosAcumuladosNetos() == 0
@@ -73,6 +79,7 @@ public final class ConsoleTests {
         expect(ReglaNegocioException.class, () -> service.editar("U9", "X"), "rechaza edición inexistente");
         expect(ReglaNegocioException.class, () -> service.editar("U1", " "), "rechaza nombre editado vacío");
 
+        System.out.println("-- Billeteras: creación y datos iniciales --");
         Billetera savings = service.crearBilletera("U1", "Ahorro", TipoBilletera.AHORRO);
         Billetera expenses = service.crearBilletera("U1", "Gastos", TipoBilletera.GASTOS_DIARIOS);
         check(new BigDecimal("0.00").equals(savings.getSaldo()), "saldo inicial exacto");
@@ -88,6 +95,7 @@ public final class ConsoleTests {
         expect(ReglaNegocioException.class,
                 () -> service.crearBilletera("U9", "Otra", TipoBilletera.AHORRO), "rechaza usuario inexistente");
 
+        System.out.println("-- Billeteras: cambios de estado --");
         service.cambiarEstadoBilletera(savings.getId(), EstadoBilletera.BLOQUEADA);
         check(savings.getEstado() == EstadoBilletera.BLOQUEADA, "bloquea billetera");
         service.cambiarEstadoBilletera(savings.getId(), EstadoBilletera.ACTIVA);
@@ -101,6 +109,7 @@ public final class ConsoleTests {
         expect(ReglaNegocioException.class,
                 () -> service.cambiarEstadoBilletera(savings.getId(), null), "rechaza estado nulo");
 
+        System.out.println("-- Usuarios: desactivación y búsquedas --");
         service.desactivar("U1");
         check(!service.obtenerUsuario("U1").isActivo(), "desactiva usuario");
         check(service.listarBilleteras("U1").size() == 2, "conserva billeteras al desactivar");
@@ -119,6 +128,7 @@ public final class ConsoleTests {
         if (!condition) {
             throw new AssertionError("FALLÓ: " + description);
         }
+        System.out.println("  [OK] " + description);
     }
 
     private static void expect(Class<? extends Throwable> expected, Runnable action, String description) {
@@ -127,6 +137,7 @@ public final class ConsoleTests {
             action.run();
         } catch (Throwable actual) {
             if (expected.isInstance(actual)) {
+                System.out.println("  [OK] " + description + " -> lanzó " + expected.getSimpleName());
                 return;
             }
             throw new AssertionError("FALLÓ: " + description + " (se esperaba "
