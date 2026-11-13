@@ -9,6 +9,12 @@ import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 
+import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
+import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
+import co.edu.uniquindio.billeteradi.model.service.ResultadoPuntos;
+import co.edu.uniquindio.billeteradi.model.structure.TablaNiveles;
+import java.util.Map;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -29,6 +35,9 @@ public final class ConsoleTests {
         System.out.println();
         System.out.println("=== TESTS DE SERVICIO ===");
         serviceChecks();
+        System.out.println();
+        System.out.println("=== TESTS DE PUNTOS Y NIVELES (RF09 y RF10) ===");
+        rewardChecks();
         System.out.println("OK: " + checks + " verificaciones pasaron.");
     }
 
@@ -121,6 +130,154 @@ public final class ConsoleTests {
                 "rechaza consulta de usuario inexistente");
         check(service.buscarUsuario(null).isEmpty() && service.buscarUsuario("U9").isEmpty(),
                 "búsquedas vacías");
+    }
+    private static void rewardChecks() {
+        RepositorioMemoria repo = new RepositorioMemoria();
+        UsuarioService users = new UsuarioService(repo);
+        RecompensaService rewards = new RecompensaService(repo);
+        for (String id : List.of("U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8")) {
+            users.registrar(id, "Usuario " + id);
+        }
+
+        System.out.println("-- Puntos: p = k * floor(m / 100) --");
+        Object[][] formula = {
+                {TipoTransaccion.RECARGA, "1000.00", 10L},
+                {TipoTransaccion.RETIRO, "1000.00", 20L},
+                {TipoTransaccion.TRANSFERENCIA, "500.00", 15L},
+                {TipoTransaccion.RECARGA, "100.00", 1L},
+                {TipoTransaccion.RETIRO, "100.00", 2L},
+                {TipoTransaccion.TRANSFERENCIA, "100.00", 3L},
+                {TipoTransaccion.RECARGA, "99.99", 0L},
+                {TipoTransaccion.TRANSFERENCIA, "99.99", 0L},
+                {TipoTransaccion.RETIRO, "250.75", 4L},
+                {TipoTransaccion.TRANSFERENCIA, "199.99", 3L},
+                {TipoTransaccion.RECARGA, "0.01", 0L},
+                {TipoTransaccion.RECARGA, "1234567.89", 12345L}
+        };
+        for (Object[] fila : formula) {
+            TipoTransaccion tipo = (TipoTransaccion) fila[0];
+            String importe = (String) fila[1];
+            long esperado = (Long) fila[2];
+            check(rewards.calcularPuntos(tipo, new BigDecimal(importe)) == esperado,
+                    tipo + " de " + importe + " = " + esperado + " puntos");
+        }
+
+        System.out.println("-- Puntos: datos inválidos --");
+        for (String malo : List.of("0", "0.00", "-1", "-100.00")) {
+            expect(ReglaNegocioException.class,
+                    () -> rewards.calcularPuntos(TipoTransaccion.RECARGA, new BigDecimal(malo)),
+                    "rechaza importe " + malo);
+        }
+        expect(ReglaNegocioException.class,
+                () -> rewards.calcularPuntos(TipoTransaccion.RECARGA, null), "rechaza importe nulo");
+        expect(ReglaNegocioException.class,
+                () -> rewards.calcularPuntos(null, new BigDecimal("100")), "rechaza tipo nulo");
+        expect(ReglaNegocioException.class,
+                () -> rewards.calcularPuntos(TipoTransaccion.REVERSION, new BigDecimal("500")),
+                "una reversión no genera puntos");
+        expect(ReglaNegocioException.class,
+                () -> rewards.calcularPuntos(TipoTransaccion.TRANSFERENCIA, new BigDecimal("1e30")),
+                "importe gigantesco -> mensaje, no ArithmeticException");
+
+        System.out.println("-- Puntos: bono de pago programado --");
+        check(rewards.getBonoProgramada() == 10, "bono por defecto = 10");
+        check(rewards.calcularPuntos(TipoTransaccion.TRANSFERENCIA, new BigDecimal("500"), true) == 25,
+                "programada exitosa: 15 base + 10 bono");
+        check(rewards.calcularPuntos(TipoTransaccion.TRANSFERENCIA, new BigDecimal("500"), false) == 15,
+                "no programada: sin bono");
+        check(rewards.calcularPuntos(TipoTransaccion.RECARGA, new BigDecimal("50"), true) == 10,
+                "el bono se suma aunque la base sea 0");
+        rewards.setBonoProgramada(25);
+        check(rewards.calcularPuntos(TipoTransaccion.RECARGA, new BigDecimal("100"), true) == 26,
+                "bono configurable (25)");
+        expect(ReglaNegocioException.class, () -> rewards.setBonoProgramada(-1), "rechaza bono negativo");
+        check(rewards.getBonoProgramada() == 25, "el bono negativo no se aplicó");
+        rewards.setBonoProgramada(RecompensaService.BONO_PROGRAMADA_POR_DEFECTO);
+
+        System.out.println("-- Nivel: tabla de umbrales --");
+        TablaNiveles table = new TablaNiveles();
+        Object[][] limites = {
+                {0L, NivelUsuario.BRONCE}, {500L, NivelUsuario.BRONCE},
+                {501L, NivelUsuario.PLATA}, {1000L, NivelUsuario.PLATA},
+                {1001L, NivelUsuario.ORO}, {5000L, NivelUsuario.ORO},
+                {5001L, NivelUsuario.PLATINO}, {Long.MAX_VALUE, NivelUsuario.PLATINO}
+        };
+        for (Object[] fila : limites) {
+            long puntos = (Long) fila[0];
+            NivelUsuario esperado = (NivelUsuario) fila[1];
+            check(table.nivelPara(puntos) == esperado, puntos + " puntos -> " + esperado);
+        }
+        expect(IllegalArgumentException.class, () -> table.nivelPara(-1), "tabla rechaza puntos negativos");
+        expect(IllegalArgumentException.class,
+                () -> new TablaNiveles(Map.of(100L, NivelUsuario.PLATA)),
+                "tabla personalizada exige el nivel que empieza en 0");
+        TablaNiveles custom = new TablaNiveles(Map.of(0L, NivelUsuario.BRONCE, 10L, NivelUsuario.ORO));
+        check(custom.nivelPara(9) == NivelUsuario.BRONCE && custom.nivelPara(10) == NivelUsuario.ORO,
+                "tabla personalizada usa sus umbrales");
+        check(rewards.determinarNivel(501) == NivelUsuario.PLATA, "determinarNivel(501) = PLATA");
+        expect(ReglaNegocioException.class, () -> rewards.determinarNivel(-1), "determinarNivel rechaza negativos");
+        Usuario manual = users.obtenerUsuario("U7");
+        manual.acreditarPuntos(1001);
+        check(manual.getNivel() == NivelUsuario.BRONCE, "acreditar directo no recalcula el nivel");
+        check(rewards.actualizarNivel(manual) == NivelUsuario.ORO && manual.getNivel() == NivelUsuario.ORO,
+                "actualizarNivel guarda el nivel que corresponde");
+
+        System.out.println("-- Acreditar puntos: guion de demostración --");
+        ResultadoPuntos recarga = rewards.otorgarPorOperacion(
+                "U1", TipoTransaccion.RECARGA, new BigDecimal("1000.00"), false);
+        check(recarga.puntosOtorgados() == 10, "recarga de 1000.00 otorga 10 puntos");
+        ResultadoPuntos transferencia = rewards.otorgarPorOperacion(
+                "U1", TipoTransaccion.TRANSFERENCIA, new BigDecimal("500.00"), false);
+        Usuario ana = users.obtenerUsuario("U1");
+        check(transferencia.puntosOtorgados() == 15, "transferencia de 500.00 otorga 15 puntos");
+        check(ana.getPuntosAcumuladosNetos() == 25 && ana.getPuntosDisponibles() == 25,
+                "acumulados y disponibles = 25");
+        check(ana.getNivel() == NivelUsuario.BRONCE && !transferencia.ascendio(), "sigue en Bronce, sin ascenso");
+        check(users.obtenerUsuario("U2").getPuntosAcumuladosNetos() == 0,
+                "solo recibe puntos el usuario indicado");
+
+        System.out.println("-- Caso 13: cambio de nivel en los límites --");
+        long[] deltas = {500, 1, 499, 1, 3999, 1};
+        NivelUsuario[] niveles = {NivelUsuario.BRONCE, NivelUsuario.PLATA, NivelUsuario.PLATA,
+                NivelUsuario.ORO, NivelUsuario.ORO, NivelUsuario.PLATINO};
+        boolean[] ascensos = {false, true, false, true, false, true};
+        long acumulado = 0;
+        for (int i = 0; i < deltas.length; i++) {
+            ResultadoPuntos r = rewards.otorgarPuntos("U3", deltas[i]);
+            acumulado += deltas[i];
+            check(r.nivelNuevo() == niveles[i] && r.ascendio() == ascensos[i]
+                            && r.puntosAcumuladosNetos() == acumulado,
+                    "con " + acumulado + " puntos -> " + niveles[i] + (ascensos[i] ? " (ascendió)" : ""));
+        }
+        check(users.obtenerUsuario("U3").getNivel() == NivelUsuario.PLATINO, "el nivel queda guardado en el usuario");
+        ResultadoPuntos salto = rewards.otorgarPuntos("U4", 6000);
+        check(salto.nivelAnterior() == NivelUsuario.BRONCE && salto.nivelNuevo() == NivelUsuario.PLATINO
+                && salto.ascendio(), "un salto grande sube varios niveles");
+
+        System.out.println("-- Acreditar puntos: casos límite y rechazos --");
+        ResultadoPuntos cero = rewards.otorgarPorOperacion(
+                "U5", TipoTransaccion.RECARGA, new BigDecimal("99.99"), false);
+        check(cero.puntosOtorgados() == 0 && users.obtenerUsuario("U5").getPuntosAcumuladosNetos() == 0
+                && !cero.ascendio(), "importe menor a 100: 0 puntos y sin cambios");
+        rewards.otorgarPuntos("U5", 100);
+        expect(ReglaNegocioException.class, () -> rewards.otorgarPuntos("U5", -5), "rechaza puntos negativos");
+        expect(ReglaNegocioException.class,
+                () -> rewards.otorgarPorOperacion("U5", TipoTransaccion.RECARGA, new BigDecimal("-10"), false),
+                "rechaza operación con importe inválido");
+        check(users.obtenerUsuario("U5").getPuntosAcumuladosNetos() == 100,
+                "los rechazos no modificaron los puntos");
+        expect(ReglaNegocioException.class, () -> rewards.otorgarPuntos("U9", 10), "rechaza usuario inexistente");
+        expect(ReglaNegocioException.class, () -> rewards.otorgarPuntos(null, 10), "rechaza usuario nulo");
+
+        rewards.otorgarPuntos("U6", Long.MAX_VALUE - 1);
+        expect(ReglaNegocioException.class, () -> rewards.otorgarPuntos("U6", 5), "rechaza desbordar el máximo");
+        Usuario cercano = users.obtenerUsuario("U6");
+        check(cercano.getPuntosAcumuladosNetos() == Long.MAX_VALUE - 1
+                && cercano.getPuntosDisponibles() == Long.MAX_VALUE - 1, "el desborde deja al usuario intacto");
+
+        ResultadoPuntos programada = rewards.otorgarPorOperacion(
+                "U8", TipoTransaccion.TRANSFERENCIA, new BigDecimal("500"), true);
+        check(programada.puntosOtorgados() == 25, "pago programado exitoso acredita base + bono");
     }
 
     private static void check(boolean condition, String description) {
