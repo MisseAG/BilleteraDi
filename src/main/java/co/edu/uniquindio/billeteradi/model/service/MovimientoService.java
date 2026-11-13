@@ -96,18 +96,9 @@ public class MovimientoService {
         billetera.setSaldo(nuevoSaldo);
 
         // 4. Registrar la transacción exitosa
-        Transaccion transaccion = new Transaccion(
-                repositorio.siguienteCodigoTransaccion(),
-                LocalDateTime.now(),
-                TipoTransaccion.RETIRO,
-                importe,
-                billetera.getId(),
-                null,
-                EstadoTransaccion.EXITOSA,
-                0,
-                null
-        );
-
+        Transaccion transaccion = new Transaccion(repositorio.siguienteCodigoTransaccion(),
+                LocalDateTime.now(), TipoTransaccion.RETIRO, importe, billetera.getId(),
+                null, EstadoTransaccion.EXITOSA, 0, null);
         repositorio.registrarTransaccion(transaccion, usuario.getId());
         return transaccion;
     }

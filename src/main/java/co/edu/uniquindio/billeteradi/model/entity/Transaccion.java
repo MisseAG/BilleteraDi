@@ -53,4 +53,6 @@ public class Transaccion {
     @Override public String toString() {
         return "Transaccion{" + id + ", " + tipo + ", " + importe + ", " + estado + "}";
     }
+
+
 }
