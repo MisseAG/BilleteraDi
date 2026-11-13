@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" styleClass="content-area"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.billeteradi.controller.UsuariosController">
+
+    <HBox spacing="16" alignment="CENTER_LEFT">
+        <Label text="Gestión de Usuarios" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="txtBuscar" promptText="Buscar por ID o nombre..." styleClass="search-field" prefWidth="260"/>
+    </HBox>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
+            <TableView fx:id="tblUsuarios" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colId" text="ID" prefWidth="100"/>
+                    <TableColumn fx:id="colNombre" text="Nombre" prefWidth="180"/>
+                    <TableColumn fx:id="colEstado" text="Estado" prefWidth="90"/>
+                    <TableColumn fx:id="colNivel" text="Nivel" prefWidth="90"/>
+                    <TableColumn fx:id="colPuntosAcum" text="Pts. Acumulados" prefWidth="115"/>
+                    <TableColumn fx:id="colPuntosDisp" text="Pts. Disponibles" prefWidth="115"/>
+                </columns>
+                <placeholder><Label text="No hay usuarios registrados" styleClass="page-subtitle"/></placeholder>
+            </TableView>
+            <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
+                <Label fx:id="lblRegistros" text="Mostrando 0 registros" styleClass="pagination-info"/>
+            </HBox>
+        </VBox>
+
+        <VBox styleClass="content-card" spacing="12" prefWidth="280" minWidth="280">
+            <Label text="Registrar / Editar" styleClass="section-title"/>
+            <Separator/>
+            <Label text="IDENTIFICADOR" styleClass="form-label"/>
+            <TextField fx:id="txtId" promptText="Ej: 1087654321" styleClass="form-field"/>
+            <Label text="NOMBRE COMPLETO" styleClass="form-label"/>
+            <TextField fx:id="txtNombre" promptText="Ej: Juan Pérez" styleClass="form-field"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Button text="Registrar" onAction="#onRegistrar" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            <Button text="Editar Nombre" onAction="#onEditar" styleClass="secondary-button" maxWidth="1.7976931348623157E308"/>
+            <Separator/>
+            <Label text="ACCIONES DE ESTADO" styleClass="form-label"/>
+            <HBox spacing="8">
+                <Button text="Desactivar" onAction="#onDesactivar" styleClass="danger-button" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                <Button text="Reactivar" onAction="#onReactivar" styleClass="success-button" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+            </HBox>
+            <Separator/>
+            <Button text="Limpiar Formulario" onAction="#onLimpiar" styleClass="neutral-button" maxWidth="1.7976931348623157E308"/>
+        </VBox>
+    </HBox>
+</VBox>

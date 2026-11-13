@@ -7,12 +7,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * Billetera de un único propietario. Nace con saldo cero y estado ACTIVA.
- *
- * El saldo es BigDecimal con dos decimales: nunca float ni double para dinero.
- * No hay setSaldo todavía: en H3 solo MovimientoService podrá modificarlo,
- * para que exista un único punto de entrada que mantenga consistentes
- * historiales, puntos e índices.
+ * Entidad que representa la billetera digital de un usuario.
  */
 public class Billetera {
 
@@ -20,7 +15,7 @@ public class Billetera {
     private final String propietarioId;
     private String nombre;
     private final TipoBilletera tipo;
-    private BigDecimal saldo; //saldo no puede ser final porque sino no se puede cambiar xd
+    private BigDecimal saldo;
     private EstadoBilletera estado;
 
     public Billetera(String id, String propietarioId, String nombre, TipoBilletera tipo) {
@@ -39,17 +34,33 @@ public class Billetera {
     public BigDecimal getSaldo() { return saldo; }
     public EstadoBilletera getEstado() { return estado; }
 
-    public void setNombre(String nombre) { this.nombre = Objects.requireNonNull(nombre, "nombre"); }
-    public void setEstado(EstadoBilletera estado) { this.estado = Objects.requireNonNull(estado, "estado"); }
+    public void setNombre(String nombre) {
+        this.nombre = Objects.requireNonNull(nombre, "nombre");
+    }
+
+    public void setEstado(EstadoBilletera estado) {
+        this.estado = Objects.requireNonNull(estado, "estado");
+    }
+
     public void setSaldo(BigDecimal saldo) {
         if (saldo == null || saldo.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El saldo no puede ser nulo ni negativo");
-        }this.saldo = saldo;
+        }
+        this.saldo = saldo;
     }
 
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         return this == o || (o instanceof Billetera b && id.equals(b.id));
     }
-    @Override public int hashCode() { return id.hashCode(); }
-    @Override public String toString() { return "Billetera{" + id + ", " + nombre + ", " + tipo + ", " + saldo + ", " + estado + "}"; }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Billetera{" + id + ", " + nombre + ", " + tipo + ", " + saldo + ", " + estado + "}";
+    }
 }

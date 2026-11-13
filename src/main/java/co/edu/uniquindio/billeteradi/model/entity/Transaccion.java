@@ -7,16 +7,20 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Entidad que registra un movimiento financiero en la plataforma.
+ */
 public class Transaccion {
+
     private final String id;
     private final LocalDateTime fecha;
     private final TipoTransaccion tipo;
     private final BigDecimal importe;
-    private final String origenId;   // Puede ser null en recargas
-    private final String destinoId;  // Puede ser null en retiros
+    private final String origenId;
+    private final String destinoId;
     private EstadoTransaccion estado;
     private final long puntosGenerados;
-    private final String transaccionOriginalId; // Usado en reversiones
+    private final String transaccionOriginalId;
 
     public Transaccion(String id, LocalDateTime fecha, TipoTransaccion tipo, BigDecimal importe,
                        String origenId, String destinoId, EstadoTransaccion estado,
@@ -46,13 +50,18 @@ public class Transaccion {
         this.estado = Objects.requireNonNull(estado, "estado");
     }
 
-    @Override public boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         return this == o || (o instanceof Transaccion t && id.equals(t.id));
     }
-    @Override public int hashCode() { return id.hashCode(); }
-    @Override public String toString() {
-        return "Transaccion{" + id + ", " + tipo + ", " + importe + ", " + estado + "}";
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 
-
+    @Override
+    public String toString() {
+        return "Transaccion{" + id + ", " + tipo + ", " + importe + ", " + estado + "}";
+    }
 }

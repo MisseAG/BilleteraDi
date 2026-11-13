@@ -1,0 +1,18 @@
+{
+  "usuarios": [
+    {"id": "1001", "nombre": "Ana Garcia", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"},
+    {"id": "1002", "nombre": "Carlos Lopez", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"},
+    {"id": "1003", "nombre": "Maria Rodriguez", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"}
+  ],
+  "billeteras": [
+    {"id": "BIL-0001", "propietarioId": "1001", "nombre": "Ahorro Personal", "tipo": "AHORRO", "saldo": "500.00", "estado": "ACTIVA"},
+    {"id": "BIL-0002", "propietarioId": "1001", "nombre": "Gastos Diarios", "tipo": "GASTOS_DIARIOS", "saldo": "150.00", "estado": "ACTIVA"},
+    {"id": "BIL-0003", "propietarioId": "1002", "nombre": "Inversiones", "tipo": "INVERSION", "saldo": "1000.00", "estado": "ACTIVA"},
+    {"id": "BIL-0004", "propietarioId": "1003", "nombre": "Compras Online", "tipo": "COMPRAS", "saldo": "312.00", "estado": "ACTIVA"}
+  ],
+  "transacciones": [
+    {"id": "TX-0001", "fecha": "2026-11-13T13:37:27.430893", "tipo": "RECARGA", "importe": "12", "origenId": null, "destinoId": "BIL-0004", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null}
+  ],
+  "consecutivoBilletera": 4,
+  "consecutivoTransaccion": 1
+}

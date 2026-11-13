@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" styleClass="content-area"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.billeteradi.controller.ReportesController">
+
+    <!-- Cabecera -->
+    <Label text="Reportes y Analítica" styleClass="page-title"/>
+    <Label text="Módulo en desarrollo — Hito 6 (H6)" styleClass="wip-label"/>
+
+    <!-- Filtros -->
+    <VBox styleClass="content-card" spacing="12">
+        <Label text="Filtros de Consulta" styleClass="section-title"/>
+        <Separator/>
+        <HBox spacing="16" alignment="CENTER_LEFT">
+            <VBox spacing="4">
+                <Label text="DESDE" styleClass="form-label"/>
+                <DatePicker fx:id="dpDesde" disable="true"/>
+            </VBox>
+            <VBox spacing="4">
+                <Label text="HASTA" styleClass="form-label"/>
+                <DatePicker fx:id="dpHasta" disable="true"/>
+            </VBox>
+            <VBox spacing="4">
+                <Label text="MÉTRICA" styleClass="form-label"/>
+                <ComboBox fx:id="cmbMetrica" promptText="Seleccione métrica..." prefWidth="220" disable="true"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Generar Reporte" onAction="#onGenerar" styleClass="accent-button" disable="true"/>
+        </HBox>
+    </VBox>
+
+    <!-- Resultados -->
+    <VBox styleClass="content-card" VBox.vgrow="ALWAYS" spacing="12">
+        <Label text="Resultados" styleClass="section-title"/>
+        <TableView fx:id="tblResultados" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn text="Métrica" prefWidth="200"/>
+                <TableColumn text="Valor" prefWidth="150"/>
+                <TableColumn text="Detalle" prefWidth="300"/>
+            </columns>
+            <placeholder><Label text="Seleccione filtros y genere un reporte — Módulo H6" styleClass="page-subtitle"/></placeholder>
+        </TableView>
+        <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
+            <Label text="Sin datos" styleClass="pagination-info"/>
+        </HBox>
+    </VBox>
+</VBox>

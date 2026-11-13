@@ -6,6 +6,7 @@ import co.edu.uniquindio.billeteradi.model.enums.EstadoBilletera;
 import co.edu.uniquindio.billeteradi.model.enums.NivelUsuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
 import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
+import co.edu.uniquindio.billeteradi.model.repository.PersistenciaJson;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 
@@ -38,7 +39,25 @@ public final class ConsoleTests {
         System.out.println();
         System.out.println("=== TESTS DE PUNTOS Y NIVELES (RF09 y RF10) ===");
         rewardChecks();
+        System.out.println();
+        System.out.println("=== TESTS DE PERSISTENCIA ===");
+        persistenciaChecks();
         System.out.println("OK: " + checks + " verificaciones pasaron.");
+    }
+
+    private static void persistenciaChecks() {
+        RepositorioMemoria repo = new RepositorioMemoria();
+        UsuarioService service = new UsuarioService(repo);
+        PersistenciaJson persistencia = new PersistenciaJson();
+
+        boolean cargado = persistencia.cargar(repo, service);
+        check(cargado, "carga datos desde JSON");
+        check(repo.totalUsuarios() >= 3, "carga al menos 3 usuarios desde JSON");
+        check(repo.totalBilleteras() >= 4, "carga al menos 4 billeteras desde JSON");
+        check(repo.existeUsuario("1001"), "usuario 1001 existe tras carga");
+        Usuario ana = repo.buscarUsuario("1001").orElseThrow();
+        check("Ana Garcia".equals(ana.getNombre()), "nombre de usuario 1001 es correcto");
+        check(!repo.listarBilleterasDeUsuario("1001").isEmpty(), "usuario 1001 tiene billeteras asociadas");
     }
 
     private static void repositoryChecks() {

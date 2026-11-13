@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" styleClass="content-area"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.billeteradi.controller.MovimientosController">
+
+    <Label text="Movimientos Financieros" styleClass="page-title"/>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox styleClass="content-card" prefWidth="400" minWidth="380" spacing="16">
+            <Label text="Operación" styleClass="section-title"/>
+            <HBox spacing="8">
+                <Button fx:id="btnTabRecarga" text="Recarga" styleClass="tab-button" onAction="#onTabRecarga"/>
+                <Button fx:id="btnTabRetiro" text="Retiro" styleClass="tab-button" onAction="#onTabRetiro"/>
+                <Button fx:id="btnTabTransferencia" text="Transferir" styleClass="tab-button" onAction="#onTabTransferencia"/>
+            </HBox>
+            <Separator/>
+
+            <VBox fx:id="paneRecarga" spacing="10">
+                <Label text="BILLETERA DESTINO" styleClass="form-label"/>
+                <ComboBox fx:id="cmbBilleteraRecarga" promptText="Seleccione billetera..." maxWidth="1.7976931348623157E308"/>
+                <Label text="IMPORTE A RECARGAR" styleClass="form-label"/>
+                <TextField fx:id="txtImporteRecarga" promptText="0.00" styleClass="form-field"/>
+                <Button text="Recargar Saldo" onAction="#onRecargar" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            </VBox>
+
+            <VBox fx:id="paneRetiro" spacing="10" visible="false" managed="false">
+                <Label text="BILLETERA ORIGEN" styleClass="form-label"/>
+                <ComboBox fx:id="cmbBilleteraRetiro" promptText="Seleccione billetera..." maxWidth="1.7976931348623157E308"/>
+                <Label text="IMPORTE A RETIRAR" styleClass="form-label"/>
+                <TextField fx:id="txtImporteRetiro" promptText="0.00" styleClass="form-field"/>
+                <Button text="Retirar Saldo" onAction="#onRetirar" styleClass="danger-button" maxWidth="1.7976931348623157E308"/>
+            </VBox>
+
+            <VBox fx:id="paneTransferencia" spacing="10" visible="false" managed="false">
+                <Label text="BILLETERA ORIGEN (propia)" styleClass="form-label"/>
+                <ComboBox fx:id="cmbOrigenTransferencia" promptText="Seleccione origen..." maxWidth="1.7976931348623157E308"/>
+                <Label text="BILLETERA DESTINO" styleClass="form-label"/>
+                <ComboBox fx:id="cmbDestinoTransferencia" promptText="Seleccione destino..." maxWidth="1.7976931348623157E308"/>
+                <Label text="IMPORTE A TRANSFERIR" styleClass="form-label"/>
+                <TextField fx:id="txtImporteTransferencia" promptText="0.00" styleClass="form-field"/>
+                <Button text="Confirmar Transferencia" onAction="#onTransferir" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            </VBox>
+        </VBox>
+
+        <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
+            <Label text="Historial de Transacciones" styleClass="section-title"/>
+            <TableView fx:id="tblTransacciones" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colTxId" text="TX" prefWidth="80"/>
+                    <TableColumn fx:id="colTxTipo" text="Tipo" prefWidth="110"/>
+                    <TableColumn fx:id="colTxImporte" text="Importe" prefWidth="100"/>
+                    <TableColumn fx:id="colTxOrigen" text="Origen" prefWidth="90"/>
+                    <TableColumn fx:id="colTxDestino" text="Destino" prefWidth="90"/>
+                    <TableColumn fx:id="colTxEstado" text="Estado" prefWidth="100"/>
+                    <TableColumn fx:id="colTxFecha" text="Fecha" prefWidth="130"/>
+                </columns>
+                <placeholder><Label text="Sin transacciones registradas" styleClass="page-subtitle"/></placeholder>
+            </TableView>
+            <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
+                <Label fx:id="lblRegistrosTx" text="Mostrando 0 transacciones" styleClass="pagination-info"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>
