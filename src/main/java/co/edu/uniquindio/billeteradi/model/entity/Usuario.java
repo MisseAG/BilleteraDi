@@ -17,9 +17,9 @@ public class Usuario {
     private final String id;
     private String nombre;
     private boolean activo;
-    private final long puntosAcumuladosNetos;   // determina el nivel
-    private final long puntosDisponibles;       // sirve para canjear beneficios
-    private final NivelUsuario nivel;
+    private long puntosAcumuladosNetos;   // determina el nivel
+    private long puntosDisponibles;       // sirve para canjear beneficios
+    private NivelUsuario nivel;
 
     public Usuario(String id, String nombre) {
         this.id = Objects.requireNonNull(id, "id");
@@ -39,6 +39,25 @@ public class Usuario {
 
     public void setNombre(String nombre) { this.nombre = Objects.requireNonNull(nombre, "nombre"); }
     public void setActivo(boolean activo) { this.activo = activo; }
+
+    /**
+     * Suma puntos ganados a los acumulados netos (nivel) y a los disponibles (canjes).
+     * Solo debe invocarlo RecompensaService.
+     */
+    public void acreditarPuntos(long puntos) {
+        if (puntos < 0) {
+            throw new IllegalArgumentException("Los puntos a acreditar no pueden ser negativos");
+        }
+        long nuevosAcumulados = Math.addExact(puntosAcumuladosNetos, puntos);
+        long nuevosDisponibles = Math.addExact(puntosDisponibles, puntos);
+        puntosAcumuladosNetos = nuevosAcumulados;   // se asigna al final: si addExact falla, no queda a medias
+        puntosDisponibles = nuevosDisponibles;
+    }
+
+
+    public void setNivel(NivelUsuario nivel) {
+        this.nivel = Objects.requireNonNull(nivel, "nivel");
+    }
 
     // La igualdad usa solo el id: es el único campo que nunca cambia.
     @Override public boolean equals(Object o) {
