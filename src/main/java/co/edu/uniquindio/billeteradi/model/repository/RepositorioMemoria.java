@@ -108,7 +108,7 @@ public class RepositorioMemoria {
         return billeteras.size();
     }
 
-    /*
+
     private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
@@ -134,5 +134,5 @@ public class RepositorioMemoria {
 
     public Optional<Transaccion> buscarTransaccion(String id) {
         return Optional.ofNullable(transacciones.get(id));
-    }*/
+    }
 }
