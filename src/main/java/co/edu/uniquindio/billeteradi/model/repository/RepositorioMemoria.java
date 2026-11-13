@@ -1,6 +1,7 @@
 package co.edu.uniquindio.billeteradi.model.repository;
 
 import co.edu.uniquindio.billeteradi.model.entity.Billetera;
+import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 
 import java.util.ArrayList;
@@ -105,5 +106,33 @@ public class RepositorioMemoria {
 
     public int totalBilleteras() {
         return billeteras.size();
+    }
+
+
+    private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
+    private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
+    private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
+    private long consecutivoTransaccion = 0;
+
+    public String siguienteCodigoTransaccion() {
+        consecutivoTransaccion++;
+        return String.format("TX-%04d", consecutivoTransaccion);
+    }
+
+    public void registrarTransaccion(Transaccion tx, String usuarioId) {
+        transacciones.put(tx.getId(), tx);
+        if (usuarioId != null) {
+            historialesUsuario.computeIfAbsent(usuarioId, k -> new ArrayList<>()).add(tx.getId());
+        }
+        if (tx.getOrigenId() != null) {
+            historialesBilletera.computeIfAbsent(tx.getOrigenId(), k -> new ArrayList<>()).add(tx.getId());
+        }
+        if (tx.getDestinoId() != null && !tx.getDestinoId().equals(tx.getOrigenId())) {
+            historialesBilletera.computeIfAbsent(tx.getDestinoId(), k -> new ArrayList<>()).add(tx.getId());
+        }
+    }
+
+    public Optional<Transaccion> buscarTransaccion(String id) {
+        return Optional.ofNullable(transacciones.get(id));
     }
 }

@@ -20,7 +20,7 @@ public class Billetera {
     private final String propietarioId;
     private String nombre;
     private final TipoBilletera tipo;
-    private final BigDecimal saldo;
+    private BigDecimal saldo; //saldo no puede ser final porque sino no se puede cambiar xd
     private EstadoBilletera estado;
 
     public Billetera(String id, String propietarioId, String nombre, TipoBilletera tipo) {
@@ -41,6 +41,11 @@ public class Billetera {
 
     public void setNombre(String nombre) { this.nombre = Objects.requireNonNull(nombre, "nombre"); }
     public void setEstado(EstadoBilletera estado) { this.estado = Objects.requireNonNull(estado, "estado"); }
+    public void setSaldo(BigDecimal saldo) {
+        if (saldo == null || saldo.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El saldo no puede ser nulo ni negativo");
+        }this.saldo = saldo;
+    }
 
     @Override public boolean equals(Object o) {
         return this == o || (o instanceof Billetera b && id.equals(b.id));
