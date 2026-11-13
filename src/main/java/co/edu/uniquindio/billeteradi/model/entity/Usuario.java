@@ -5,20 +5,15 @@ import co.edu.uniquindio.billeteradi.model.enums.NivelUsuario;
 import java.util.Objects;
 
 /**
- * Usuario de la plataforma. El identificador es inmutable (regla de negocio);
- * todo lo demás puede cambiar.
- *
- * Los campos de puntos y nivel quedan en su valor inicial en H2. Sus
- * mutadores los agrega RecompensaService en H3, para que ningún otro código
- * pueda tocarlos antes de que exista la regla que los gobierna.
+ * Entidad que representa a un usuario registrado en la plataforma.
  */
 public class Usuario {
 
     private final String id;
     private String nombre;
     private boolean activo;
-    private long puntosAcumuladosNetos;   // determina el nivel
-    private long puntosDisponibles;       // sirve para canjear beneficios
+    private long puntosAcumuladosNetos;
+    private long puntosDisponibles;
     private NivelUsuario nivel;
 
     public Usuario(String id, String nombre) {
@@ -37,32 +32,54 @@ public class Usuario {
     public long getPuntosDisponibles() { return puntosDisponibles; }
     public NivelUsuario getNivel() { return nivel; }
 
-    public void setNombre(String nombre) { this.nombre = Objects.requireNonNull(nombre, "nombre"); }
-    public void setActivo(boolean activo) { this.activo = activo; }
+    public void setNombre(String nombre) {
+        this.nombre = Objects.requireNonNull(nombre, "nombre");
+    }
 
-    /**
-     * Suma puntos ganados a los acumulados netos (nivel) y a los disponibles (canjes).
-     * Solo debe invocarlo RecompensaService.
-     */
+    public void setActivo(boolean activo) {
+        this.activo = activo;
+    }
+
     public void acreditarPuntos(long puntos) {
         if (puntos < 0) {
             throw new IllegalArgumentException("Los puntos a acreditar no pueden ser negativos");
         }
         long nuevosAcumulados = Math.addExact(puntosAcumuladosNetos, puntos);
         long nuevosDisponibles = Math.addExact(puntosDisponibles, puntos);
-        puntosAcumuladosNetos = nuevosAcumulados;   // se asigna al final: si addExact falla, no queda a medias
-        puntosDisponibles = nuevosDisponibles;
+        this.puntosAcumuladosNetos = nuevosAcumulados;
+        this.puntosDisponibles = nuevosDisponibles;
     }
-
 
     public void setNivel(NivelUsuario nivel) {
         this.nivel = Objects.requireNonNull(nivel, "nivel");
     }
 
-    // La igualdad usa solo el id: es el único campo que nunca cambia.
-    @Override public boolean equals(Object o) {
+    public void setPuntosDisponibles(long puntos) {
+        if (puntos < 0) {
+            throw new IllegalArgumentException("Puntos disponibles no pueden ser negativos");
+        }
+        this.puntosDisponibles = puntos;
+    }
+
+    public void setPuntosAcumuladosNetos(long puntos) {
+        if (puntos < 0) {
+            throw new IllegalArgumentException("Puntos acumulados no pueden ser negativos");
+        }
+        this.puntosAcumuladosNetos = puntos;
+    }
+
+    @Override
+    public boolean equals(Object o) {
         return this == o || (o instanceof Usuario u && id.equals(u.id));
     }
-    @Override public int hashCode() { return id.hashCode(); }
-    @Override public String toString() { return "Usuario{" + id + ", " + nombre + (activo ? "" : ", inactivo") + "}"; }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Usuario{" + id + ", " + nombre + (activo ? "" : ", inactivo") + "}";
+    }
 }

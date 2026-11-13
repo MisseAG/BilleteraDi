@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" styleClass="content-area"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.billeteradi.controller.BilleterasController">
+
+    <HBox spacing="16" alignment="CENTER_LEFT">
+        <Label text="Gestión de Billeteras" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblUsuarioActivo" text="Sin usuario seleccionado" styleClass="page-subtitle"/>
+    </HBox>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
+            <TableView fx:id="tblBilleteras" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="100"/>
+                    <TableColumn fx:id="colNombreB" text="Nombre" prefWidth="180"/>
+                    <TableColumn fx:id="colTipo" text="Tipo" prefWidth="140"/>
+                    <TableColumn fx:id="colSaldo" text="Saldo" prefWidth="120"/>
+                    <TableColumn fx:id="colEstadoB" text="Estado" prefWidth="100"/>
+                </columns>
+                <placeholder><Label text="No hay billeteras para este usuario" styleClass="page-subtitle"/></placeholder>
+            </TableView>
+            <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
+                <Label fx:id="lblRegistros" text="Mostrando 0 registros" styleClass="pagination-info"/>
+            </HBox>
+        </VBox>
+
+        <VBox styleClass="content-card" spacing="12" prefWidth="280" minWidth="280">
+            <Label text="Nueva Billetera" styleClass="section-title"/>
+            <Separator/>
+            <Label text="NOMBRE" styleClass="form-label"/>
+            <TextField fx:id="txtNombreBilletera" promptText="Ej: Ahorro Personal" styleClass="form-field"/>
+            <Label text="TIPO" styleClass="form-label"/>
+            <ComboBox fx:id="cmbTipo" promptText="Seleccione tipo..." maxWidth="1.7976931348623157E308"/>
+            <Button text="Crear Billetera" onAction="#onCrear" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            <Separator/>
+            <Label text="CAMBIAR ESTADO" styleClass="form-label"/>
+            <Label text="Seleccione una billetera de la tabla" styleClass="page-subtitle"/>
+            <HBox spacing="8">
+                <Button text="Bloquear" onAction="#onBloquear" styleClass="danger-button" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                <Button text="Activar" onAction="#onActivar" styleClass="success-button" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>

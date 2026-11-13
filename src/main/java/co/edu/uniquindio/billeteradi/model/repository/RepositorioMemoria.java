@@ -12,33 +12,23 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Almacenamiento en memoria de usuarios y billeteras (H2).
- *
- * Estructuras (sección 3 del documento):
- *  - usuarios:             mapa hash id -> Usuario            (buscar por id en O(1))
- *  - billeteras:           mapa hash id -> Billetera          (buscar por código en O(1))
- *  - billeterasPorUsuario: mapa hash idUsuario -> ids de sus billeteras
- *                          (listar las k billeteras de un usuario en O(k), sin
- *                          recorrer todas las billeteras)
- *
- * Se usa LinkedHashMap, que es un HashMap con la misma complejidad O(1) y,
- * además, conserva el orden de inserción: las tablas de la interfaz muestran
- * los registros en el orden en que se crearon, sin tener que ordenar.
- *
- * Esta clase NO valida reglas de negocio (eso es de los servicios). Solo
- * garantiza integridad estructural: no hay ids repetidos y no existen
- * billeteras huérfanas.
+ * Repositorio en memoria para usuarios, billeteras y transacciones.
+ * Utiliza LinkedHashMap para garantizar búsquedas en O(1) y orden de inserción.
  */
 public class RepositorioMemoria {
 
     private final Map<String, Usuario> usuarios = new LinkedHashMap<>();
     private final Map<String, Billetera> billeteras = new LinkedHashMap<>();
     private final Map<String, List<String>> billeterasPorUsuario = new LinkedHashMap<>();
+    private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
+    private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
+    private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
+
     private long consecutivoBilletera = 0;
+    private long consecutivoTransaccion = 0;
 
-    // ---------------- usuarios ----------------
+    // ---------------- Usuarios ----------------
 
-    /** @return true si se agregó; false si ya existía un usuario con ese id (no se modifica nada). */
     public boolean agregarUsuario(Usuario usuario) {
         return usuarios.putIfAbsent(usuario.getId(), usuario) == null;
     }
@@ -51,7 +41,6 @@ public class RepositorioMemoria {
         return usuarios.containsKey(id);
     }
 
-    /** Copia de solo lectura: quien la reciba no puede alterar el repositorio. */
     public List<Usuario> listarUsuarios() {
         return Collections.unmodifiableList(new ArrayList<>(usuarios.values()));
     }
@@ -60,23 +49,28 @@ public class RepositorioMemoria {
         return usuarios.size();
     }
 
-    // ---------------- billeteras ----------------
+    // ---------------- Billeteras ----------------
 
-    /**
-     * Genera el siguiente código de billetera (BIL-0001, BIL-0002...).
-     * Solo debe llamarse cuando ya se validó todo, para no consumir códigos
-     * en operaciones rechazadas.
-     */
     public String siguienteCodigoBilletera() {
         consecutivoBilletera++;
         return String.format("BIL-%04d", consecutivoBilletera);
     }
 
-    /**
-     * @return true si se agregó; false si ya existía una billetera con ese código.
-     * @throws IllegalArgumentException si el propietario no existe (evita billeteras huérfanas).
-     */
     public boolean agregarBilletera(Billetera billetera) {
+        if (!usuarios.containsKey(billetera.getPropietarioId())) {
+            throw new IllegalArgumentException(
+                    "El propietario " + billetera.getPropietarioId() + " no existe en el repositorio");
+        }
+        if (billeteras.putIfAbsent(billetera.getId(), billetera) != null) {
+            return false;
+        }
+        billeterasPorUsuario
+                .computeIfAbsent(billetera.getPropietarioId(), k -> new ArrayList<>())
+                .add(billetera.getId());
+        return true;
+    }
+
+    public boolean agregarBilleteraDirecto(Billetera billetera) {
         if (!usuarios.containsKey(billetera.getPropietarioId())) {
             throw new IllegalArgumentException(
                     "El propietario " + billetera.getPropietarioId() + " no existe en el repositorio");
@@ -94,7 +88,6 @@ public class RepositorioMemoria {
         return Optional.ofNullable(billeteras.get(id));
     }
 
-    /** Billeteras del usuario en orden de creación. Lista vacía si no tiene o no existe. O(k). */
     public List<Billetera> listarBilleterasDeUsuario(String usuarioId) {
         List<String> ids = billeterasPorUsuario.getOrDefault(usuarioId, List.of());
         List<Billetera> resultado = new ArrayList<>(ids.size());
@@ -104,15 +97,15 @@ public class RepositorioMemoria {
         return Collections.unmodifiableList(resultado);
     }
 
+    public List<Billetera> listarTodasBilleteras() {
+        return Collections.unmodifiableList(new ArrayList<>(billeteras.values()));
+    }
+
     public int totalBilleteras() {
         return billeteras.size();
     }
 
-
-    private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
-    private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
-    private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
-    private long consecutivoTransaccion = 0;
+    // ---------------- Transacciones ----------------
 
     public String siguienteCodigoTransaccion() {
         consecutivoTransaccion++;
@@ -134,5 +127,37 @@ public class RepositorioMemoria {
 
     public Optional<Transaccion> buscarTransaccion(String id) {
         return Optional.ofNullable(transacciones.get(id));
+    }
+
+    public List<Transaccion> listarTransaccionesDeUsuario(String usuarioId) {
+        List<String> txIds = historialesUsuario.getOrDefault(usuarioId, List.of());
+        List<Transaccion> resultado = new ArrayList<>(txIds.size());
+        for (String txId : txIds) {
+            Transaccion tx = transacciones.get(txId);
+            if (tx != null) resultado.add(tx);
+        }
+        return Collections.unmodifiableList(resultado);
+    }
+
+    public List<Transaccion> listarTodasTransacciones() {
+        return Collections.unmodifiableList(new ArrayList<>(transacciones.values()));
+    }
+
+    // ---------------- Consecutivos ----------------
+
+    public long getConsecutivoBilletera() {
+        return consecutivoBilletera;
+    }
+
+    public void setConsecutivoBilletera(long valor) {
+        this.consecutivoBilletera = valor;
+    }
+
+    public long getConsecutivoTransaccion() {
+        return consecutivoTransaccion;
+    }
+
+    public void setConsecutivoTransaccion(long valor) {
+        this.consecutivoTransaccion = valor;
     }
 }

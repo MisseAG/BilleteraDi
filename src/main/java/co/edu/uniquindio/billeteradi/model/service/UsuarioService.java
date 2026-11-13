@@ -11,12 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Casos de uso de usuarios y billeteras (RF01 y RF02).
- *
- * Patrón de todos los métodos que escriben: VALIDAR primero y modificar al
- * final. Así un rechazo nunca deja datos a medias (ver 3.5.1 del documento).
- * Los identificadores los escribe el operario (modelo de ventanilla), por eso
- * se normalizan con trim() y se rechazan si quedan vacíos.
+ * Servicio de lógica de negocio para usuarios y billeteras (RF01 y RF02).
  */
 public class UsuarioService {
 
@@ -26,9 +21,8 @@ public class UsuarioService {
         this.repositorio = repositorio;
     }
 
-    // ---------------- usuarios ----------------
+    // ---------------- Usuarios ----------------
 
-    /** Registra un usuario activo, con 0 puntos y nivel Bronce. */
     public Usuario registrar(String id, String nombre) {
         String idLimpio = exigirTexto(id, "El identificador");
         String nombreLimpio = exigirTexto(nombre, "El nombre");
@@ -40,7 +34,6 @@ public class UsuarioService {
         return usuario;
     }
 
-    /** Cambia el nombre. El identificador es inmutable, por eso no se recibe uno nuevo. */
     public Usuario editar(String id, String nuevoNombre) {
         Usuario usuario = obtenerUsuario(id);
         String nombreLimpio = exigirTexto(nuevoNombre, "El nombre");
@@ -48,16 +41,21 @@ public class UsuarioService {
         return usuario;
     }
 
-    /**
-     * Desactiva al usuario sin borrar nada: su registro, sus billeteras y (desde H3)
-     * su historial siguen en el repositorio y se pueden consultar.
-     */
     public Usuario desactivar(String id) {
         Usuario usuario = obtenerUsuario(id);
         if (!usuario.isActivo()) {
             throw new ReglaNegocioException("El usuario '" + usuario.getId() + "' ya está inactivo");
         }
         usuario.setActivo(false);
+        return usuario;
+    }
+
+    public Usuario reactivar(String id) {
+        Usuario usuario = obtenerUsuario(id);
+        if (usuario.isActivo()) {
+            throw new ReglaNegocioException("El usuario '" + usuario.getId() + "' ya está activo");
+        }
+        usuario.setActivo(true);
         return usuario;
     }
 
@@ -74,9 +72,8 @@ public class UsuarioService {
         return repositorio.listarUsuarios();
     }
 
-    // ---------------- billeteras ----------------
+    // ---------------- Billeteras ----------------
 
-    /** Crea una billetera ACTIVA con saldo 0.00 para un usuario activo. */
     public Billetera crearBilletera(String usuarioId, String nombre, TipoBilletera tipo) {
         Usuario propietario = obtenerUsuario(usuarioId);
         if (!propietario.isActivo()) {
@@ -86,13 +83,11 @@ public class UsuarioService {
         if (tipo == null) {
             throw new ReglaNegocioException("Debe indicar el tipo de billetera");
         }
-        // Todo validado: recién ahora se consume un código.
         Billetera billetera = new Billetera(repositorio.siguienteCodigoBilletera(), propietario.getId(), nombreLimpio, tipo);
         repositorio.agregarBilletera(billetera);
         return billetera;
     }
 
-    /** Bloquea o reactiva una billetera. Pedir el mismo estado que ya tiene se rechaza. */
     public Billetera cambiarEstadoBilletera(String billeteraId, EstadoBilletera nuevoEstado) {
         Billetera billetera = obtenerBilletera(billeteraId);
         if (nuevoEstado == null) {
@@ -114,13 +109,16 @@ public class UsuarioService {
                 new ReglaNegocioException("La billetera '" + (id == null ? "" : id.trim()) + "' no existe"));
     }
 
-    /** Billeteras del usuario en orden de creación (O(k)). Falla si el usuario no existe. */
     public List<Billetera> listarBilleteras(String usuarioId) {
         Usuario usuario = obtenerUsuario(usuarioId);
         return repositorio.listarBilleterasDeUsuario(usuario.getId());
     }
 
-    // ---------------- utilidades ----------------
+    public List<Billetera> listarTodasBilleteras() {
+        return repositorio.listarTodasBilleteras();
+    }
+
+    // ---------------- Utilidades ----------------
 
     private static String exigirTexto(String valor, String etiqueta) {
         if (valor == null || valor.trim().isEmpty()) {

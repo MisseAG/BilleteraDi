@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" styleClass="content-area"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.billeteradi.controller.ProgramadasController">
+
+    <!-- Cabecera -->
+    <Label text="Operaciones Programadas" styleClass="page-title"/>
+    <Label text="Módulo en desarrollo — Hito 5 (H5)" styleClass="wip-label"/>
+
+    <!-- Contenido -->
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+
+        <!-- Tarjeta de Formulario -->
+        <VBox styleClass="content-card" prefWidth="340" minWidth="320" spacing="12">
+            <Label text="Programar Operación" styleClass="section-title"/>
+            <Separator/>
+            <Label text="TIPO DE OPERACIÓN" styleClass="form-label"/>
+            <ComboBox fx:id="cmbTipoOp" promptText="Seleccione tipo..." maxWidth="1.7976931348623157E308" disable="true"/>
+            <Label text="BILLETERA ORIGEN" styleClass="form-label"/>
+            <ComboBox fx:id="cmbOrigenProg" promptText="Seleccione origen..." maxWidth="1.7976931348623157E308" disable="true"/>
+            <Label text="BILLETERA DESTINO" styleClass="form-label"/>
+            <ComboBox fx:id="cmbDestinoProg" promptText="Seleccione destino..." maxWidth="1.7976931348623157E308" disable="true"/>
+            <Label text="IMPORTE" styleClass="form-label"/>
+            <TextField fx:id="txtImporteProg" promptText="0.00" styleClass="form-field" disable="true"/>
+            <Label text="FECHA DE EJECUCIÓN" styleClass="form-label"/>
+            <DatePicker fx:id="dpFecha" maxWidth="1.7976931348623157E308" disable="true"/>
+            <Label text="HORA (HH:mm)" styleClass="form-label"/>
+            <TextField fx:id="txtHora" promptText="14:30" styleClass="form-field" disable="true"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Button text="Programar" onAction="#onProgramar" styleClass="accent-button" maxWidth="1.7976931348623157E308" disable="true"/>
+            <Button text="Cancelar Seleccionada" onAction="#onCancelar" styleClass="danger-button" maxWidth="1.7976931348623157E308" disable="true"/>
+        </VBox>
+
+        <!-- Tarjeta de Tabla -->
+        <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
+            <Label text="Operaciones Programadas" styleClass="section-title"/>
+            <TableView fx:id="tblProgramadas" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn text="ID" prefWidth="80"/>
+                    <TableColumn text="Tipo" prefWidth="110"/>
+                    <TableColumn text="Importe" prefWidth="100"/>
+                    <TableColumn text="Origen" prefWidth="90"/>
+                    <TableColumn text="Destino" prefWidth="90"/>
+                    <TableColumn text="Fecha Ejecución" prefWidth="140"/>
+                    <TableColumn text="Estado" prefWidth="100"/>
+                </columns>
+                <placeholder><Label text="No hay operaciones programadas — Módulo H5" styleClass="page-subtitle"/></placeholder>
+            </TableView>
+            <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
+                <Label text="0 registros" styleClass="pagination-info"/>
+            </HBox>
+        </VBox>
+
+    </HBox>
+</VBox>
