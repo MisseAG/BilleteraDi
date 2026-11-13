@@ -1,18 +1,30 @@
 {
   "usuarios": [
-    {"id": "1001", "nombre": "Ana Garcia", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"},
+    {"id": "1001", "nombre": "Ana Garcia", "activo": false, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"},
     {"id": "1002", "nombre": "Carlos Lopez", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"},
     {"id": "1003", "nombre": "Maria Rodriguez", "activo": true, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"}
   ],
   "billeteras": [
-    {"id": "BIL-0001", "propietarioId": "1001", "nombre": "Ahorro Personal", "tipo": "AHORRO", "saldo": "500.00", "estado": "ACTIVA"},
-    {"id": "BIL-0002", "propietarioId": "1001", "nombre": "Gastos Diarios", "tipo": "GASTOS_DIARIOS", "saldo": "150.00", "estado": "ACTIVA"},
+    {"id": "BIL-0001", "propietarioId": "1001", "nombre": "Ahorro Personal", "tipo": "AHORRO", "saldo": "0.00", "estado": "BLOQUEADA"},
+    {"id": "BIL-0002", "propietarioId": "1001", "nombre": "Gastos Diarios", "tipo": "GASTOS_DIARIOS", "saldo": "1000.00", "estado": "ACTIVA"},
     {"id": "BIL-0003", "propietarioId": "1002", "nombre": "Inversiones", "tipo": "INVERSION", "saldo": "1000.00", "estado": "ACTIVA"},
-    {"id": "BIL-0004", "propietarioId": "1003", "nombre": "Compras Online", "tipo": "COMPRAS", "saldo": "312.00", "estado": "ACTIVA"}
+    {"id": "BIL-0004", "propietarioId": "1003", "nombre": "Compras Online", "tipo": "COMPRAS", "saldo": "312.00", "estado": "ACTIVA"},
+    {"id": "BIL-0005", "propietarioId": "1001", "nombre": "Caprichos", "tipo": "COMPRAS", "saldo": "150.00", "estado": "BLOQUEADA"}
   ],
   "transacciones": [
-    {"id": "TX-0001", "fecha": "2026-11-13T13:37:27.430893", "tipo": "RECARGA", "importe": "12", "origenId": null, "destinoId": "BIL-0004", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null}
+    {"id": "TX-0001", "fecha": "2026-11-13T13:37:27.430893", "tipo": "RECARGA", "importe": "12", "origenId": null, "destinoId": "BIL-0004", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0002", "fecha": "2026-11-13T16:53:13.413860600", "tipo": "RECARGA", "importe": "10000", "origenId": null, "destinoId": "BIL-0001", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0003", "fecha": "2026-11-13T16:55:37.483456200", "tipo": "RETIRO", "importe": "10500", "origenId": "BIL-0001", "destinoId": null, "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0004", "fecha": "2026-11-13T16:56:43.360652300", "tipo": "TRANSFERENCIA", "importe": "20", "origenId": "BIL-0005", "destinoId": "BIL-0003", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0005", "fecha": "2026-11-13T16:58:13.825211100", "tipo": "TRANSFERENCIA", "importe": "150", "origenId": "BIL-0002", "destinoId": "BIL-0005", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0006", "fecha": "2026-11-13T18:11:51.212879200", "tipo": "RECARGA", "importe": "150", "origenId": null, "destinoId": "BIL-0005", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0007", "fecha": "2026-11-13T18:13:33.654949400", "tipo": "TRANSFERENCIA", "importe": "1000", "origenId": "BIL-0003", "destinoId": "BIL-0005", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0008", "fecha": "2026-11-13T18:16:05.089218800", "tipo": "TRANSFERENCIA", "importe": "1000", "origenId": "BIL-0003", "destinoId": "BIL-0001", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0009", "fecha": "2026-11-13T18:16:42.746087600", "tipo": "TRANSFERENCIA", "importe": "1000", "origenId": "BIL-0003", "destinoId": "BIL-0002", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0010", "fecha": "2026-11-13T18:36:02.132846200", "tipo": "RECARGA", "importe": "1000", "origenId": null, "destinoId": "BIL-0003", "estado": "EXITOSA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0011", "fecha": "2026-11-13T18:36:21.586690500", "tipo": "TRANSFERENCIA", "importe": "10", "origenId": "BIL-0003", "destinoId": "BIL-0002", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null},
+    {"id": "TX-0012", "fecha": "2026-11-13T18:36:43.153217", "tipo": "TRANSFERENCIA", "importe": "10", "origenId": "BIL-0004", "destinoId": "BIL-0002", "estado": "RECHAZADA", "puntosGenerados": 0, "transaccionOriginalId": null}
   ],
-  "consecutivoBilletera": 4,
-  "consecutivoTransaccion": 1
+  "consecutivoBilletera": 5,
+  "consecutivoTransaccion": 12
 }

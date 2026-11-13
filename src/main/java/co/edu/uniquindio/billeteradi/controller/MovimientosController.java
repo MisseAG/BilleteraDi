@@ -304,6 +304,8 @@ public class MovimientosController {
             refrescar();
             if (onDataChanged != null) onDataChanged.run();
         } catch (ReglaNegocioException e) {
+            refrescar(); //correccion
+            if (onDataChanged != null) onDataChanged.run();
             PrincipalController.mostrarError(e.getMessage());
         }
     }
@@ -338,6 +340,8 @@ public class MovimientosController {
             refrescar();
             if (onDataChanged != null) onDataChanged.run();
         } catch (ReglaNegocioException e) {
+            refrescar(); //correcion
+            if (onDataChanged != null) onDataChanged.run();
             PrincipalController.mostrarError(e.getMessage());
         }
     }
@@ -389,6 +393,8 @@ public class MovimientosController {
                 refrescar();
                 if (onDataChanged != null) onDataChanged.run();
             } catch (ReglaNegocioException e) {
+                refrescar();
+                if (onDataChanged != null) onDataChanged.run();
                 PrincipalController.mostrarError(e.getMessage());
             }
         }
