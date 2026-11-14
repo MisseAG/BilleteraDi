@@ -11,7 +11,10 @@ import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Servicio encargado de gestionar los movimientos financieros (RF03, RF04, RF05).
@@ -183,4 +186,32 @@ public class MovimientoService {
             throw new ReglaNegocioException("La billetera '" + billetera.getId() + "' se encuentra bloqueada y no puede operar");
         }
     }
+
+    //RF06
+    public List<Transaccion> consultarHistorial(String usuarioId, String billeteraId, TipoTransaccion tipo,
+                                                EstadoTransaccion estado, LocalDateTime inicio, LocalDateTime fin) {
+        List<String> idsTransacciones;
+        if (billeteraId != null && !billeteraId.trim().isEmpty()) {
+            idsTransacciones = repositorio.getHistorialesBilletera().getOrDefault(billeteraId.trim(), List.of());
+        } else if (usuarioId != null && !usuarioId.trim().isEmpty()) {
+            idsTransacciones = repositorio.getHistorialesUsuario().getOrDefault(usuarioId.trim(), List.of());
+        } else {
+            idsTransacciones = new ArrayList<>(repositorio.getTransaccionesMap().keySet());
+            // Si no se especifica usuario ni billetera, se evalua sobre todas las transacciones registradas
+        }
+        List<Transaccion> resultado = new ArrayList<>();
+        for (String txId : idsTransacciones) {
+            Optional<Transaccion> optTx = repositorio.buscarTransaccion(txId);
+            if (optTx.isPresent()) {
+                Transaccion tx = optTx.get();
+                if (tipo != null && tx.getTipo() != tipo) continue;
+                if (estado != null && tx.getEstado() != estado) continue;
+                if (inicio != null && tx.getFecha().isBefore(inicio)) continue;
+                if (fin != null && tx.getFecha().isAfter(fin)) continue;
+                resultado.add(tx);
+            }
+        }return resultado;
+    }
+
+
 }

@@ -23,9 +23,12 @@ public class RepositorioMemoria {
     private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
-
     private long consecutivoBilletera = 0;
     private long consecutivoTransaccion = 0;
+
+    public Map<String, List<String>> getHistorialesUsuario() {return historialesUsuario;}
+    public Map<String, List<String>> getHistorialesBilletera() {return historialesBilletera;}
+    public Map<String, Transaccion> getTransaccionesMap() {return transacciones;}
 
     // ---------------- Usuarios ----------------
 
@@ -160,4 +163,6 @@ public class RepositorioMemoria {
     public void setConsecutivoTransaccion(long valor) {
         this.consecutivoTransaccion = valor;
     }
+
+
 }
