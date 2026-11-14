@@ -33,26 +33,14 @@ public class MovimientoService {
     public Transaccion recargar(String usuarioId, String billeteraId, String textoImporte) {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         Billetera billetera = usuarioService.obtenerBilletera(billeteraId);
-
         validarPertenencia(usuario, billetera);
         validarBilleteraActiva(billetera);
         BigDecimal importe = validarImporte(textoImporte);
-
         BigDecimal nuevoSaldo = billetera.getSaldo().add(importe);
         billetera.setSaldo(nuevoSaldo);
-
-        Transaccion transaccion = new Transaccion(
-                repositorio.siguienteCodigoTransaccion(),
-                LocalDateTime.now(),
-                TipoTransaccion.RECARGA,
-                importe,
-                null,
-                billetera.getId(),
-                EstadoTransaccion.EXITOSA,
-                0,
-                null
-        );
-
+        Transaccion transaccion = new Transaccion(repositorio.siguienteCodigoTransaccion(), LocalDateTime.now(),
+                TipoTransaccion.RECARGA, importe, null, billetera.getId(),
+                EstadoTransaccion.EXITOSA, 0, null);
         repositorio.registrarTransaccion(transaccion, usuario.getId());
         return transaccion;
     }
@@ -60,11 +48,9 @@ public class MovimientoService {
     public Transaccion retirar(String usuarioId, String billeteraId, String textoImporte) {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         Billetera billetera = usuarioService.obtenerBilletera(billeteraId);
-
         validarPertenencia(usuario, billetera);
         validarBilleteraActiva(billetera);
         BigDecimal importe = validarImporte(textoImporte);
-
         if (billetera.getSaldo().compareTo(importe) < 0) {
             Transaccion transaccionRechazada = new Transaccion(
                     repositorio.siguienteCodigoTransaccion(),
@@ -80,7 +66,6 @@ public class MovimientoService {
             repositorio.registrarTransaccion(transaccionRechazada, usuario.getId());
             throw new ReglaNegocioException("Saldo insuficiente para realizar el retiro. Saldo actual: $ " + billetera.getSaldo());
         }
-
         BigDecimal nuevoSaldo = billetera.getSaldo().subtract(importe);
         billetera.setSaldo(nuevoSaldo);
 
