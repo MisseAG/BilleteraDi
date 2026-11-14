@@ -89,50 +89,28 @@ public class MovimientoService {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         Billetera origen = usuarioService.obtenerBilletera(billeteraOrigenId);
         Billetera destino = usuarioService.obtenerBilletera(billeteraDestinoId);
-
         validarPertenencia(usuario, origen);
         validarBilleteraActiva(origen);
         validarBilleteraActiva(destino);
         BigDecimal importe = validarImporte(textoImporte);
-
         if (origen.getId().equals(destino.getId())) {
             throw new ReglaNegocioException("No se puede transferir a la misma billetera");
         }
-
         if (origen.getSaldo().compareTo(importe) < 0) {
-            Transaccion rechazada = new Transaccion(
-                    repositorio.siguienteCodigoTransaccion(),
-                    LocalDateTime.now(),
-                    TipoTransaccion.TRANSFERENCIA,
-                    importe,
-                    origen.getId(),
-                    destino.getId(),
-                    EstadoTransaccion.RECHAZADA,
-                    0,
-                    null
-            );
+            Transaccion rechazada = new Transaccion(repositorio.siguienteCodigoTransaccion(), LocalDateTime.now(),
+                    TipoTransaccion.TRANSFERENCIA, importe, origen.getId(), destino.getId(),
+                    EstadoTransaccion.RECHAZADA, 0, null);
             repositorio.registrarTransaccion(rechazada, usuario.getId());
             throw new ReglaNegocioException(
                     "Saldo insuficiente para la transferencia. Saldo actual: $ " + origen.getSaldo());
         }
-
         BigDecimal nuevoSaldoOrigen = origen.getSaldo().subtract(importe);
         BigDecimal nuevoSaldoDestino = destino.getSaldo().add(importe);
-
         origen.setSaldo(nuevoSaldoOrigen);
         destino.setSaldo(nuevoSaldoDestino);
-
-        Transaccion transaccion = new Transaccion(
-                repositorio.siguienteCodigoTransaccion(),
-                LocalDateTime.now(),
-                TipoTransaccion.TRANSFERENCIA,
-                importe,
-                origen.getId(),
-                destino.getId(),
-                EstadoTransaccion.EXITOSA,
-                0,
-                null
-        );
+        Transaccion transaccion = new Transaccion(repositorio.siguienteCodigoTransaccion(), LocalDateTime.now(),
+                TipoTransaccion.TRANSFERENCIA, importe, origen.getId(), destino.getId(),
+                EstadoTransaccion.EXITOSA, 0, null);
         repositorio.registrarTransaccion(transaccion, usuario.getId());
         return transaccion;
     }
@@ -168,7 +146,8 @@ public class MovimientoService {
 
     private void validarBilleteraActiva(Billetera billetera) {
         if (billetera.getEstado() != EstadoBilletera.ACTIVA) {
-            throw new ReglaNegocioException("La billetera '" + billetera.getId() + "' se encuentra bloqueada y no puede operar");
+            throw new ReglaNegocioException("La billetera '" + billetera.getId() +
+                    "' se encuentra bloqueada y no puede operar");
         }
     }
 

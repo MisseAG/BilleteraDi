@@ -5,17 +5,13 @@ import co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion;
 import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
 import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.PriorityQueue; // O tu estructura de cola/prioridad personalizada
-
 import static co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion.*;
 
-
 public class ProgramacionService {
-
     private final RepositorioMemoria repositorio;
     private final MovimientoService movimientoService;
     private final NotificacionService notificacionService; // Opcional para RF12
@@ -65,7 +61,6 @@ public class ProgramacionService {
                 }
                 prog.setEstado(EstadoProgramacion.EJECUTADA);
             } catch (Exception e) {
-                // Si no hay saldo u ocurre un error, queda FALLIDA y genera una notificación[cite: 1]
                 prog.setEstado(EstadoProgramacion.FALLIDA);
                 if (notificacionService != null) {
                     notificacionService.notificar(prog.getUsuarioId(), "La programación " + prog.getId() +
