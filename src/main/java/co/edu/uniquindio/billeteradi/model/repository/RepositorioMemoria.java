@@ -16,7 +16,6 @@ import java.util.Optional;
  * Utiliza LinkedHashMap para garantizar búsquedas en O(1) y orden de inserción.
  */
 public class RepositorioMemoria {
-
     private final Map<String, Usuario> usuarios = new LinkedHashMap<>();
     private final Map<String, Billetera> billeteras = new LinkedHashMap<>();
     private final Map<String, List<String>> billeterasPorUsuario = new LinkedHashMap<>();
