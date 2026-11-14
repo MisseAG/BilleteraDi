@@ -16,35 +16,33 @@ import java.util.Optional;
  * Utiliza LinkedHashMap para garantizar búsquedas en O(1) y orden de inserción.
  */
 public class RepositorioMemoria {
-
     private final Map<String, Usuario> usuarios = new LinkedHashMap<>();
     private final Map<String, Billetera> billeteras = new LinkedHashMap<>();
     private final Map<String, List<String>> billeterasPorUsuario = new LinkedHashMap<>();
     private final Map<String, Transaccion> transacciones = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesUsuario = new LinkedHashMap<>();
     private final Map<String, List<String>> historialesBilletera = new LinkedHashMap<>();
-
     private long consecutivoBilletera = 0;
     private long consecutivoTransaccion = 0;
+
+    public Map<String, List<String>> getHistorialesUsuario() {return historialesUsuario;}
+    public Map<String, List<String>> getHistorialesBilletera() {return historialesBilletera;}
+    public Map<String, Transaccion> getTransaccionesMap() {return transacciones;}
 
     // ---------------- Usuarios ----------------
 
     public boolean agregarUsuario(Usuario usuario) {
         return usuarios.putIfAbsent(usuario.getId(), usuario) == null;
     }
-
     public Optional<Usuario> buscarUsuario(String id) {
         return Optional.ofNullable(usuarios.get(id));
     }
-
     public boolean existeUsuario(String id) {
         return usuarios.containsKey(id);
     }
-
     public List<Usuario> listarUsuarios() {
         return Collections.unmodifiableList(new ArrayList<>(usuarios.values()));
     }
-
     public int totalUsuarios() {
         return usuarios.size();
     }
@@ -93,8 +91,7 @@ public class RepositorioMemoria {
         List<Billetera> resultado = new ArrayList<>(ids.size());
         for (String id : ids) {
             resultado.add(billeteras.get(id));
-        }
-        return Collections.unmodifiableList(resultado);
+        }return Collections.unmodifiableList(resultado);
     }
 
     public List<Billetera> listarTodasBilleteras() {
@@ -135,8 +132,7 @@ public class RepositorioMemoria {
         for (String txId : txIds) {
             Transaccion tx = transacciones.get(txId);
             if (tx != null) resultado.add(tx);
-        }
-        return Collections.unmodifiableList(resultado);
+        }return Collections.unmodifiableList(resultado);
     }
 
     public List<Transaccion> listarTodasTransacciones() {
@@ -148,16 +144,15 @@ public class RepositorioMemoria {
     public long getConsecutivoBilletera() {
         return consecutivoBilletera;
     }
-
     public void setConsecutivoBilletera(long valor) {
         this.consecutivoBilletera = valor;
     }
-
     public long getConsecutivoTransaccion() {
         return consecutivoTransaccion;
     }
-
     public void setConsecutivoTransaccion(long valor) {
         this.consecutivoTransaccion = valor;
     }
+
+
 }
