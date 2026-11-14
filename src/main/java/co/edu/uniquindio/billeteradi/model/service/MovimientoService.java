@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -37,7 +36,7 @@ public class MovimientoService {
 
         validarPertenencia(usuario, billetera);
         BigDecimal importe = validarImporte(textoImporte);
-        // Validarbilleteraactiva no registra el rechazo
+        // ValidarBilleteraActiva no registra el rechazo
         // si la billetera está bloqueada
         // validarBilleteraActiva(billetera);
         validarBilleteraActivaParaOperar(
@@ -75,7 +74,7 @@ public class MovimientoService {
 
         validarPertenencia(usuario, billetera);
         BigDecimal importe = validarImporte(textoImporte);
-        // Validarbilleteraactiva no registra el rechazo
+        // ValidarBilleteraActiva no registra el rechazo
         // si la billetera está bloqueada
         //validarBilleteraActiva(billetera);
 
@@ -99,21 +98,6 @@ public class MovimientoService {
             );
         }
 
-//        if (billetera.getSaldo().compareTo(importe) < 0) {
-//            Transaccion transaccionRechazada = new Transaccion(
-//                    repositorio.siguienteCodigoTransaccion(),
-//                    LocalDateTime.now(),
-//                    TipoTransaccion.RETIRO,
-//                    importe,
-//                    billetera.getId(),
-//                    null,
-//                    EstadoTransaccion.RECHAZADA,
-//                    0,
-//                    null
-//            );
-//            repositorio.registrarTransaccion(transaccionRechazada, usuario.getId());
-//            throw new ReglaNegocioException("Saldo insuficiente para realizar el retiro. Saldo actual: $ " + billetera.getSaldo());
-//        }
 
         BigDecimal nuevoSaldo = billetera.getSaldo().subtract(importe);
         billetera.setSaldo(nuevoSaldo);
@@ -243,17 +227,6 @@ public class MovimientoService {
         return importe;
     }
 
-//    private void validarPertenencia(Usuario usuario, Billetera billetera) {
-//        if (!billetera.getPropietarioId().equals(usuario.getId())) {
-//            throw new ReglaNegocioException("La billetera '" + billetera.getId() + "' no pertenece al usuario seleccionado");
-//        }
-//    }
-//
-//    private void validarBilleteraActiva(Billetera billetera) {
-//        if (billetera.getEstado() != EstadoBilletera.ACTIVA) {
-//            throw new ReglaNegocioException("La billetera '" + billetera.getId() + "' se encuentra bloqueada y no puede operar");
-//        }
-//    }
 
     private void validarUsuarioActivo(Usuario usuario) {
         if (!usuario.isActivo()) {
@@ -328,6 +301,5 @@ public class MovimientoService {
             }
         }return resultado;
     }
-
 
 }
