@@ -16,12 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Servicio encargado de gestionar los movimientos financieros (RF03, RF04, RF05).
- * Modifica saldos bajo reglas de negocio estrictas.
- */
 public class MovimientoService {
-
     private final RepositorioMemoria repositorio;
     private final UsuarioService usuarioService;
 
@@ -52,34 +47,18 @@ public class MovimientoService {
         validarBilleteraActiva(billetera);
         BigDecimal importe = validarImporte(textoImporte);
         if (billetera.getSaldo().compareTo(importe) < 0) {
-            Transaccion transaccionRechazada = new Transaccion(
-                    repositorio.siguienteCodigoTransaccion(),
-                    LocalDateTime.now(),
-                    TipoTransaccion.RETIRO,
-                    importe,
-                    billetera.getId(),
-                    null,
-                    EstadoTransaccion.RECHAZADA,
-                    0,
-                    null
-            );
+            Transaccion transaccionRechazada = new Transaccion(repositorio.siguienteCodigoTransaccion(), LocalDateTime.now(),
+                    TipoTransaccion.RETIRO, importe, billetera.getId(), null,
+                    EstadoTransaccion.RECHAZADA, 0, null);
             repositorio.registrarTransaccion(transaccionRechazada, usuario.getId());
-            throw new ReglaNegocioException("Saldo insuficiente para realizar el retiro. Saldo actual: $ " + billetera.getSaldo());
+            throw new ReglaNegocioException("Saldo insuficiente para realizar el retiro. Saldo actual: $ " +
+                    billetera.getSaldo());
         }
         BigDecimal nuevoSaldo = billetera.getSaldo().subtract(importe);
         billetera.setSaldo(nuevoSaldo);
-
-        Transaccion transaccion = new Transaccion(
-                repositorio.siguienteCodigoTransaccion(),
-                LocalDateTime.now(),
-                TipoTransaccion.RETIRO,
-                importe,
-                billetera.getId(),
-                null,
-                EstadoTransaccion.EXITOSA,
-                0,
-                null
-        );
+        Transaccion transaccion = new Transaccion(repositorio.siguienteCodigoTransaccion(), LocalDateTime.now(),
+                TipoTransaccion.RETIRO, importe, billetera.getId(), null,
+                EstadoTransaccion.EXITOSA, 0, null);
         repositorio.registrarTransaccion(transaccion, usuario.getId());
         return transaccion;
     }
@@ -162,8 +141,7 @@ public class MovimientoService {
         } else {
             idsTransacciones = new ArrayList<>(repositorio.getTransaccionesMap().keySet());
             // Si no se especifica usuario ni billetera, se evalua sobre todas las transacciones registradas
-        }
-        List<Transaccion> resultado = new ArrayList<>();
+        }List<Transaccion> resultado = new ArrayList<>();
         for (String txId : idsTransacciones) {
             Optional<Transaccion> optTx = repositorio.buscarTransaccion(txId);
             if (optTx.isPresent()) {

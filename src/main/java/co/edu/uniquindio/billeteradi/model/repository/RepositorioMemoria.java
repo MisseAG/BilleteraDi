@@ -35,19 +35,15 @@ public class RepositorioMemoria {
     public boolean agregarUsuario(Usuario usuario) {
         return usuarios.putIfAbsent(usuario.getId(), usuario) == null;
     }
-
     public Optional<Usuario> buscarUsuario(String id) {
         return Optional.ofNullable(usuarios.get(id));
     }
-
     public boolean existeUsuario(String id) {
         return usuarios.containsKey(id);
     }
-
     public List<Usuario> listarUsuarios() {
         return Collections.unmodifiableList(new ArrayList<>(usuarios.values()));
     }
-
     public int totalUsuarios() {
         return usuarios.size();
     }
@@ -96,8 +92,7 @@ public class RepositorioMemoria {
         List<Billetera> resultado = new ArrayList<>(ids.size());
         for (String id : ids) {
             resultado.add(billeteras.get(id));
-        }
-        return Collections.unmodifiableList(resultado);
+        }return Collections.unmodifiableList(resultado);
     }
 
     public List<Billetera> listarTodasBilleteras() {
@@ -138,8 +133,7 @@ public class RepositorioMemoria {
         for (String txId : txIds) {
             Transaccion tx = transacciones.get(txId);
             if (tx != null) resultado.add(tx);
-        }
-        return Collections.unmodifiableList(resultado);
+        }return Collections.unmodifiableList(resultado);
     }
 
     public List<Transaccion> listarTodasTransacciones() {
@@ -151,15 +145,12 @@ public class RepositorioMemoria {
     public long getConsecutivoBilletera() {
         return consecutivoBilletera;
     }
-
     public void setConsecutivoBilletera(long valor) {
         this.consecutivoBilletera = valor;
     }
-
     public long getConsecutivoTransaccion() {
         return consecutivoTransaccion;
     }
-
     public void setConsecutivoTransaccion(long valor) {
         this.consecutivoTransaccion = valor;
     }
