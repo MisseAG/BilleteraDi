@@ -136,7 +136,20 @@ public class PrincipalController {
 
         lblEstado.setText(usuarioActivo.isActivo() ? "Activo" : "Inactivo");
         lblEstado.getStyleClass().setAll(usuarioActivo.isActivo() ? "badge-active" : "badge-inactive");
+
         lblNivel.setText(usuarioActivo.getNivel().name());
+        String claseNivel = switch (usuarioActivo.getNivel()) {
+            case PLATA -> "nivel-plata";
+            case ORO -> "nivel-oro";
+            case PLATINO -> "nivel-platino";
+            default -> "badge-nivel";
+        };
+        if ("badge-nivel".equals(claseNivel)) {
+            lblNivel.getStyleClass().setAll("badge-nivel");
+        } else {
+            lblNivel.getStyleClass().setAll("badge-nivel", claseNivel);
+        }
+
         lblPuntos.setText(usuarioActivo.getPuntosAcumuladosNetos() + " pts");
 
         billeterasViewController.setUsuarioActivo(usuarioActivo);

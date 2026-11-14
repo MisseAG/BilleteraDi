@@ -331,6 +331,24 @@
     -fx-background-radius: 4;
 }
 
+.nivel-plata {
+    -fx-text-fill: #334155;
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: #94A3B8;
+}
+
+.nivel-oro {
+    -fx-text-fill: #854D0E;
+    -fx-background-color: #FEF9C3;
+    -fx-border-color: #D4AF37;
+}
+
+.nivel-platino {
+    -fx-text-fill: #EBF3F5;
+    -fx-background-color: #1E4E5F;
+    -fx-border-color: #293133;
+}
+
 .badge-puntos {
     -fx-text-fill: #6D28D9;
     -fx-font-size: 12px;
