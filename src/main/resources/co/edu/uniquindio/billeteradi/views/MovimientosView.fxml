@@ -47,7 +47,11 @@
         </VBox>
 
         <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
-            <Label text="Historial de Transacciones" styleClass="section-title"/>
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Historial de Transacciones" styleClass="section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnRevertir" text="Revertir última operación" onAction="#onRevertirUltima" styleClass="danger-button"/>
+            </HBox>
             <TableView fx:id="tblTransacciones" VBox.vgrow="ALWAYS">
                 <columns>
                     <TableColumn fx:id="colTxId" text="TX" prefWidth="80"/>

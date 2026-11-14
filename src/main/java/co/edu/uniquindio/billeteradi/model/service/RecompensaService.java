@@ -81,8 +81,7 @@ public class RecompensaService {
         if (puntos < 0) {
             throw new ReglaNegocioException("Los puntos a otorgar no pueden ser negativos");
         }
-        Usuario usuario = repositorio.buscarUsuario(usuarioId == null ? "" : usuarioId.trim())
-                .orElseThrow(() -> new ReglaNegocioException("El usuario '" + usuarioId + "' no existe"));
+        Usuario usuario = obtenerUsuarioValido(usuarioId);
 
         NivelUsuario nivelAnterior = usuario.getNivel();
         try {
@@ -94,6 +93,36 @@ public class RecompensaService {
 
         return new ResultadoPuntos(usuario.getId(), puntos, usuario.getPuntosAcumuladosNetos(),
                 usuario.getPuntosDisponibles(), nivelAnterior, nivelNuevo);
+    }
+
+    public ResultadoPuntos revertirPuntos(String usuarioId, long puntos) {
+        if (puntos < 0) {
+            throw new ReglaNegocioException("Los puntos a revertir no pueden ser negativos");
+        }
+
+       Usuario usuario = obtenerUsuarioValido(usuarioId);
+
+        if (usuario.getPuntosDisponibles() < puntos) {
+            throw new ReglaNegocioException(
+                    "No es posible revertir: puntos disponbiles insuficientes ("
+                    + usuario.getPuntosDisponibles() + " puntos disponibles, se requieren " + puntos + " puntos)");
+        }
+
+        NivelUsuario nivelAnterior = usuario.getNivel();
+        usuario.revertirPuntos(puntos);
+        NivelUsuario nivelNuevo = actualizarNivel(usuario);
+
+        return new ResultadoPuntos(usuario.getId(), -puntos, usuario.getPuntosAcumuladosNetos(), usuario.getPuntosDisponibles(), nivelAnterior, nivelNuevo);
+    }
+
+    private Usuario obtenerUsuarioValido(String usuarioId) {
+        if (usuarioId == null || usuarioId.isBlank()) {
+            throw new ReglaNegocioException("El ID del usuario es obligatorio");
+        }
+
+        String idLimpio = usuarioId.trim();
+        return repositorio.buscarUsuario(idLimpio)
+                .orElseThrow(() -> new ReglaNegocioException("El usuario '" + idLimpio + "' no existe"));
     }
 
     public long getBonoProgramada() {

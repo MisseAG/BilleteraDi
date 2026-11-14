@@ -8,6 +8,7 @@ import co.edu.uniquindio.billeteradi.model.enums.EstadoTransaccion;
 import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
 import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
+import co.edu.uniquindio.billeteradi.model.structure.Pila;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,10 +24,19 @@ public class MovimientoService {
 
     private final RepositorioMemoria repositorio;
     private final UsuarioService usuarioService;
+    private final RecompensaService recompensaService;
 
     public MovimientoService(RepositorioMemoria repositorio, UsuarioService usuarioService) {
         this.repositorio = repositorio;
         this.usuarioService = usuarioService;
+        this.recompensaService = new RecompensaService(repositorio);
+    }
+
+    public MovimientoService(RepositorioMemoria repositorio, UsuarioService usuarioService,
+                             RecompensaService recompensaService) {
+        this.repositorio = repositorio;
+        this.usuarioService = usuarioService;
+        this.recompensaService = recompensaService;
     }
 
     public Transaccion recargar(String usuarioId, String billeteraId, String textoImporte) {
@@ -51,6 +61,9 @@ public class MovimientoService {
         BigDecimal nuevoSaldo = billetera.getSaldo().add(importe);
         billetera.setSaldo(nuevoSaldo);
 
+        ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
+                usuario.getId(), TipoTransaccion.RECARGA, importe, false);
+
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
                 LocalDateTime.now(),
@@ -59,11 +72,12 @@ public class MovimientoService {
                 null,
                 billetera.getId(),
                 EstadoTransaccion.EXITOSA,
-                0,
+                resultadoPuntos.puntosOtorgados(),
                 null
         );
 
         repositorio.registrarTransaccion(transaccion, usuario.getId());
+        repositorio.obtenerPilaReversion(usuario.getId()).push(transaccion.getId());
         return transaccion;
     }
 
@@ -74,9 +88,6 @@ public class MovimientoService {
 
         validarPertenencia(usuario, billetera);
         BigDecimal importe = validarImporte(textoImporte);
-        // ValidarBilleteraActiva no registra el rechazo
-        // si la billetera está bloqueada
-        //validarBilleteraActiva(billetera);
 
         validarBilleteraActivaParaOperar(
                 usuario.getId(),
@@ -102,6 +113,9 @@ public class MovimientoService {
         BigDecimal nuevoSaldo = billetera.getSaldo().subtract(importe);
         billetera.setSaldo(nuevoSaldo);
 
+        ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
+                usuario.getId(), TipoTransaccion.RETIRO, importe, false);
+
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
                 LocalDateTime.now(),
@@ -110,10 +124,12 @@ public class MovimientoService {
                 billetera.getId(),
                 null,
                 EstadoTransaccion.EXITOSA,
-                0,
+                resultadoPuntos.puntosOtorgados(),
                 null
         );
+
         repositorio.registrarTransaccion(transaccion, usuario.getId());
+        repositorio.obtenerPilaReversion(usuario.getId()).push(transaccion.getId());
         return transaccion;
     }
 
@@ -189,6 +205,9 @@ public class MovimientoService {
         origen.setSaldo(nuevoSaldoOrigen);
         destino.setSaldo(nuevoSaldoDestino);
 
+        ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
+                usuario.getId(), TipoTransaccion.TRANSFERENCIA, importe, false);
+
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
                 LocalDateTime.now(),
@@ -197,10 +216,12 @@ public class MovimientoService {
                 origen.getId(),
                 destino.getId(),
                 EstadoTransaccion.EXITOSA,
-                0,
+                resultadoPuntos.puntosOtorgados(),
                 null
         );
+
         repositorio.registrarTransaccion(transaccion, usuario.getId());
+        repositorio.obtenerPilaReversion(usuario.getId()).push(transaccion.getId());
         return transaccion;
     }
 
@@ -302,4 +323,111 @@ public class MovimientoService {
         }return resultado;
     }
 
+    public Transaccion consultarUltimaReversible(String usuarioId){
+        Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
+        Pila<String> pila = repositorio.obtenerPilaReversion(usuario.getId());
+
+        while (!pila.estaVacia()) {
+            String txId = pila.peek();
+            Transaccion tx = repositorio.buscarTransaccion(txId).orElse(null);
+
+            if (tx == null || tx.getEstado() == EstadoTransaccion.REVERTIDA) {
+                pila.pop();
+            } else {
+                return tx;
+            }
+        }
+        return null;
+    }
+
+    public Transaccion revertirUltima(String usuarioId){
+        Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
+        validarUsuarioActivo(usuario);
+        Pila<String> pila = repositorio.obtenerPilaReversion(usuario.getId());
+
+        Transaccion original = consultarUltimaReversible(usuario.getId());
+
+        if (original == null) {
+            throw new ReglaNegocioException("El usuario no tiene operaciones disponibles para revertir");
+        }
+
+        if (original.getEstado() != EstadoTransaccion.EXITOSA) {
+            throw new ReglaNegocioException("Solo se pueden revertir transacciones exitosas");
+        }
+
+        if (original.getTipo() == TipoTransaccion.REVERSION) {
+            throw new ReglaNegocioException("Un movimiento compensatorio no puede ser revertido");
+        }
+
+        long puntosARevertir = original.getPuntosGenerados();
+        if (usuario.getPuntosDisponibles() < puntosARevertir) {
+            throw new ReglaNegocioException(
+              "No es posible revertir: puntos disponibles insuficientes ("
+              + usuario.getPuntosDisponibles() + " puntos disponibles, se requieren " + puntosARevertir + ")"
+            );
+        }
+
+        BigDecimal importe = original.getImporte();
+        Billetera origenCompensacion = null;
+        Billetera destinoCompensacion = null;
+
+        switch (original.getTipo()) {
+            case RECARGA -> {
+                Billetera billetera = usuarioService.obtenerBilletera(original.getDestinoId());
+                validarBilleteraActiva(billetera);
+                if (billetera.getSaldo().compareTo(importe) < 0) {
+                    throw new ReglaNegocioException(
+                            "Fondos insuficientes para revertir la recarga. Saldo actual: $ " + billetera.getSaldo());
+                }
+                origenCompensacion = billetera;
+            }
+            case RETIRO -> {
+                Billetera billetera = usuarioService.obtenerBilletera(original.getOrigenId());
+                validarBilleteraActiva(billetera);
+                destinoCompensacion = billetera;
+            }
+            case TRANSFERENCIA -> {
+                Billetera origenOriginal = usuarioService.obtenerBilletera(original.getOrigenId());
+                Billetera destinoOriginal = usuarioService.obtenerBilletera(original.getDestinoId());
+                validarBilleteraActiva(origenOriginal);
+                validarBilleteraActiva(destinoOriginal);
+
+                if (destinoOriginal.getSaldo().compareTo(importe) < 0) {
+                    throw new ReglaNegocioException(
+                            "Fondos insuficientes en la billetera destino para revertir la transferencia. Saldo destino: $ " + destinoOriginal.getSaldo()
+                    );
+                }
+                origenCompensacion = destinoOriginal;
+                destinoCompensacion = origenOriginal;
+            }
+        }
+
+        if (origenCompensacion != null) {
+            origenCompensacion.setSaldo(origenCompensacion.getSaldo().subtract(importe));
+        }
+
+        if (destinoCompensacion != null) {
+            destinoCompensacion.setSaldo(destinoCompensacion.getSaldo().add(importe));
+        }
+
+        recompensaService.revertirPuntos(usuario.getId(), puntosARevertir);
+
+        Transaccion compensacion = new Transaccion(
+                repositorio.siguienteCodigoTransaccion(),
+                LocalDateTime.now(),
+                TipoTransaccion.REVERSION,
+                importe,
+                origenCompensacion != null ? origenCompensacion.getId() : null,
+                destinoCompensacion != null ? destinoCompensacion.getId() : null,
+                EstadoTransaccion.EXITOSA,
+                0,
+                original.getId()
+        );
+
+        original.setEstado(EstadoTransaccion.REVERTIDA);
+        repositorio.registrarTransaccion(compensacion, usuario.getId());
+        pila.pop();
+
+        return compensacion;
+    }
 }
