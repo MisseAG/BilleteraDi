@@ -50,6 +50,17 @@ public class Usuario {
         this.puntosDisponibles = nuevosDisponibles;
     }
 
+    public void revertirPuntos(long puntos) {
+        if (puntos < 0) {
+            throw new IllegalArgumentException("Los puntos a revertir no pueden ser negativos");
+        }
+        if (this.puntosDisponibles < puntos || this.puntosAcumuladosNetos < puntos) {
+            throw new IllegalStateException("Puntos insuficientes para revertir");
+        }
+        this.puntosDisponibles -= puntos;
+        this.puntosAcumuladosNetos -= puntos;
+    }
+
     public void setNivel(NivelUsuario nivel) {
         this.nivel = Objects.requireNonNull(nivel, "nivel");
     }

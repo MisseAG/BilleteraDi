@@ -11,14 +11,12 @@ import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Controlador principal de la aplicación.
@@ -59,8 +57,8 @@ public class PrincipalController {
     public void initialize() {
         repositorio = new RepositorioMemoria();
         usuarioService = new UsuarioService(repositorio);
-        movimientoService = new MovimientoService(repositorio, usuarioService);
         recompensaService = new RecompensaService(repositorio);
+        movimientoService = new MovimientoService(repositorio, usuarioService, recompensaService);
         persistencia = new PersistenciaJson();
 
         // 1. Cargar datos primero (persistencia JSON o datos semilla)
@@ -107,6 +105,7 @@ public class PrincipalController {
         ));
         if (seleccionado != null && cmbUsuarioActivo.getItems().contains(seleccionado)) {
             cmbUsuarioActivo.setValue(seleccionado);
+            actualizarUsuarioActivo();
         } else if (!usuarios.isEmpty()) {
             cmbUsuarioActivo.getSelectionModel().selectFirst();
             actualizarUsuarioActivo();
@@ -227,5 +226,13 @@ public class PrincipalController {
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();
+    }
+
+    static Optional<ButtonType> mostrarAlertaConfimacion(String titulo, String header, String contenido) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(titulo);
+        alert.setHeaderText(header);
+        alert.setContentText(contenido);
+        return alert.showAndWait();
     }
 }

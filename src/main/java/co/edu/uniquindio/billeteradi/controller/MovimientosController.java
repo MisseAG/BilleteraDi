@@ -64,6 +64,7 @@ public class MovimientosController {
     @FXML private TableColumn<Transaccion, String> colTxEstado;
     @FXML private TableColumn<Transaccion, String> colTxFecha;
     @FXML private Label lblRegistrosTx;
+    @FXML private Button btnRevertir;
 
     private UsuarioService usuarioService;
     private MovimientoService movimientoService;
@@ -111,6 +112,7 @@ public class MovimientosController {
     public void refrescar() {
         cargarCombosBilleteras();
         cargarHistorial();
+        actualizarEstadoBotonRevertir();
     }
 
     private void aplicarFormatterImporte(TextField campo) {
@@ -215,6 +217,17 @@ public class MovimientosController {
         lblRegistrosTx.setText(txs.size() + " transacciones");
     }
 
+    // Auxiliar para revertir última operación
+    private void actualizarEstadoBotonRevertir() {
+        if (btnRevertir == null) return;
+        if (movimientoService == null || usuarioActivo == null || !usuarioActivo.isActivo()) {
+            btnRevertir.setDisable(true);
+            return;
+        }
+        boolean hayReversible = movimientoService.consultarUltimaReversible(usuarioActivo.getId()) != null;
+        btnRevertir.setDisable(!hayReversible);
+    }
+
     private String extraerIdBilletera(String textoCombo) {
         if (textoCombo == null || textoCombo.isBlank() || textoCombo.startsWith("──")) return null;
         return textoCombo.split(" — ")[0].trim();
@@ -247,6 +260,7 @@ public class MovimientosController {
             case "RECARGA" -> "Recarga";
             case "RETIRO" -> "Retiro";
             case "TRANSFERENCIA" -> "Transferencia";
+            case "REVERSION" -> "Reversión";
             default -> tipo;
         };
     }
@@ -299,6 +313,7 @@ public class MovimientosController {
                     + "Billetera: " + b.getNombre() + " (" + b.getId() + ")\n"
                     + "Monto recargado: $ " + tx.getImporte().toPlainString() + "\n"
                     + "Nuevo saldo: $ " + b.getSaldo().toPlainString() + "\n"
+                    + "Puntos generados: +" + tx.getPuntosGenerados() + " pts\n"
                     + "Transacción: " + tx.getId());
             txtImporteRecarga.clear();
             refrescar();
@@ -335,6 +350,7 @@ public class MovimientosController {
                     + "Billetera: " + b.getNombre() + " (" + b.getId() + ")\n"
                     + "Monto retirado: $ " + tx.getImporte().toPlainString() + "\n"
                     + "Nuevo saldo: $ " + b.getSaldo().toPlainString() + "\n"
+                    + "Puntos generados: +" + tx.getPuntosGenerados() + " pts\n"
                     + "Transacción: " + tx.getId());
             txtImporteRetiro.clear();
             refrescar();
@@ -388,6 +404,7 @@ public class MovimientosController {
                         + "Hacia: " + descDestino + "\n"
                         + "Monto transferido: $ " + tx.getImporte().toPlainString() + "\n"
                         + "Saldo restante: $ " + bOrigen.getSaldo().toPlainString() + "\n"
+                        + "Puntos generados: +" + tx.getPuntosGenerados() + " pts\n"
                         + "Transacción: " + tx.getId());
                 txtImporteTransferencia.clear();
                 refrescar();
@@ -397,6 +414,46 @@ public class MovimientosController {
                 if (onDataChanged != null) onDataChanged.run();
                 PrincipalController.mostrarError(e.getMessage());
             }
+        }
+    }
+
+    // Revertir Operación Última
+    @FXML
+    private void onRevertirUltima() {
+        if (usuarioActivo == null) {
+            PrincipalController.mostrarAlerta("Seleccione un usuario.");
+            return;
+        }
+        try {
+            Transaccion candidata = movimientoService.consultarUltimaReversible(usuarioActivo.getId());
+            if (candidata == null) {
+                PrincipalController.mostrarAlerta("El usuario no tiene operaciones elegibles para revertir.");
+                return;
+            }
+
+            String contenido = "Transacción original: " + candidata.getId() + "\n" +
+                    "Tipo: " + formatearTipo(candidata.getTipo().name()) + "\n" +
+                    "Monto: $" + candidata.getImporte().toPlainString() + "\n" +
+                    "Puntos a descontar: " + candidata.getPuntosGenerados() + " pts\n\n" +
+                    "¿Desea confirmar la reversión?";
+
+            Optional<ButtonType> resultado = PrincipalController.mostrarAlertaConfimacion(
+                    "Confirmar Reversión",
+                    "Se generará un movimiento compensatorio para la última operación",
+                    contenido);
+            if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
+                Transaccion compensacion = movimientoService.revertirUltima(usuarioActivo.getId());
+                PrincipalController.mostrarExito(
+                        "Reversión exitosa\n\n"
+                        + "Original revertida: " + candidata.getId() + "\n"
+                        + "Movimiento compensatorio: " + compensacion.getId() + "\n"
+                        + "Monto compensado : $ " + compensacion.getImporte().toPlainString()
+                );
+                refrescar();
+                if (onDataChanged != null) onDataChanged.run();
+            }
+        } catch (ReglaNegocioException e) {
+            PrincipalController.mostrarError(e.getMessage());
         }
     }
 }

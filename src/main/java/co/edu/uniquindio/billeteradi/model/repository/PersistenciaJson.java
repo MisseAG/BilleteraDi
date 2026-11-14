@@ -19,7 +19,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Persistencia en formato JSON sin dependencias externas.
@@ -208,15 +207,12 @@ public class PersistenciaJson {
                             txOriginalId
                     );
 
-                    String usuarioId = null;
-                    if (origenId != null) {
-                        Optional<Billetera> bOrigen = repo.buscarBilletera(origenId);
-                        if (bOrigen.isPresent()) usuarioId = bOrigen.get().getPropietarioId();
-                    } else if (destinoId != null) {
-                        Optional<Billetera> bDestino = repo.buscarBilletera(destinoId);
-                        if (bDestino.isPresent()) usuarioId = bDestino.get().getPropietarioId();
-                    }
+                    String usuarioId = resolverPropietarioTransaccion(repo, tx);
                     repo.registrarTransaccion(tx, usuarioId);
+
+                    if (usuarioId != null && tx.getEstado() == EstadoTransaccion.EXITOSA && tx.getTipo() !=  TipoTransaccion.REVERSION) {
+                        repo.obtenerPilaReversion(usuarioId).push(tx.getId());
+                    }
                 }
             }
 
@@ -348,4 +344,24 @@ public class PersistenciaJson {
             return 0;
         }
     }
+    private String resolverPropietarioTransaccion(RepositorioMemoria repo, Transaccion tx) {
+        if (tx.getTipo() == TipoTransaccion.REVERSION && tx.getTransaccionOriginalId() != null) {
+            Transaccion original = repo.buscarTransaccion(tx.getTransaccionOriginalId()).orElse(null);
+            if (original != null) {
+                return resolverPropietarioTransaccion(repo, original);
+            }
+        }
+        if (tx.getOrigenId() != null) {
+            return repo.buscarBilletera(tx.getOrigenId())
+                    .map(Billetera::getPropietarioId)
+                    .orElse(null);
+        }
+        if (tx.getDestinoId() != null) {
+            return repo.buscarBilletera(tx.getDestinoId())
+                    .map(Billetera::getPropietarioId)
+                    .orElse(null);
+        }
+        return null;
+    }
+
 }

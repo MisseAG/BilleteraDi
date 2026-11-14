@@ -3,6 +3,7 @@ package co.edu.uniquindio.billeteradi.model.repository;
 import co.edu.uniquindio.billeteradi.model.entity.Billetera;
 import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
+import co.edu.uniquindio.billeteradi.model.structure.Pila;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,8 @@ public class RepositorioMemoria {
     public Map<String, List<String>> getHistorialesUsuario() {return historialesUsuario;}
     public Map<String, List<String>> getHistorialesBilletera() {return historialesBilletera;}
     public Map<String, Transaccion> getTransaccionesMap() {return transacciones;}
+
+    private final Map<String, Pila<String>> pilasReversion = new LinkedHashMap<>();
 
     // ---------------- Usuarios ----------------
 
@@ -137,6 +140,10 @@ public class RepositorioMemoria {
 
     public List<Transaccion> listarTodasTransacciones() {
         return Collections.unmodifiableList(new ArrayList<>(transacciones.values()));
+    }
+
+    public Pila<String> obtenerPilaReversion(String usuarioId) {
+        return pilasReversion.computeIfAbsent(usuarioId, k -> new Pila<>());
     }
 
     // ---------------- Consecutivos ----------------
