@@ -59,6 +59,8 @@
             <Label fx:id="lblNivel" styleClass="badge-nivel"/>
             <Label text="|" styleClass="top-bar-divider"/>
             <Label fx:id="lblPuntos" styleClass="badge-puntos"/>
+            <Label text="|" styleClass="top-bar-divider"/>
+            <Button fx:id="btnNotificaciones" text="🕭 Alertas (0)" onAction="#onVerNotificaciones" styleClass="tab-button"/>
         </HBox>
     </top>
     <center>

@@ -25,18 +25,23 @@ public class MovimientoService {
     private final RepositorioMemoria repositorio;
     private final UsuarioService usuarioService;
     private final RecompensaService recompensaService;
+    private final NotificacionService notificacionService;
 
     public MovimientoService(RepositorioMemoria repositorio, UsuarioService usuarioService) {
-        this.repositorio = repositorio;
-        this.usuarioService = usuarioService;
-        this.recompensaService = new RecompensaService(repositorio);
+        this(repositorio, usuarioService, new RecompensaService(repositorio), new NotificacionService());
     }
 
     public MovimientoService(RepositorioMemoria repositorio, UsuarioService usuarioService,
                              RecompensaService recompensaService) {
+        this(repositorio, usuarioService, recompensaService, new NotificacionService());
+    }
+
+    public MovimientoService(RepositorioMemoria repositorio, UsuarioService usuarioService,
+                             RecompensaService recompensaService, NotificacionService notificacionService) {
         this.repositorio = repositorio;
         this.usuarioService = usuarioService;
         this.recompensaService = recompensaService;
+        this.notificacionService = notificacionService;
     }
 
     public Transaccion recargar(String usuarioId, String billeteraId, String textoImporte) {
@@ -63,6 +68,16 @@ public class MovimientoService {
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
                 usuario.getId(), TipoTransaccion.RECARGA, importe, false);
+
+        // Notificar cambio de nivel
+        if (resultadoPuntos.ascendio()) {
+            notificacionService.notificarCambioNivel(
+                    usuario.getId(),
+                    resultadoPuntos.nivelAnterior(),
+                    resultadoPuntos.nivelNuevo(),
+                    resultadoPuntos.puntosAcumuladosNetos()
+            );
+        }
 
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
@@ -112,9 +127,20 @@ public class MovimientoService {
 
         BigDecimal nuevoSaldo = billetera.getSaldo().subtract(importe);
         billetera.setSaldo(nuevoSaldo);
+        notificacionService.verificarYNotificarSaldoBajo(usuario.getId(), billetera);
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
                 usuario.getId(), TipoTransaccion.RETIRO, importe, false);
+
+        // Notificar cambio de nivel
+        if (resultadoPuntos.ascendio()) {
+            notificacionService.notificarCambioNivel(
+                    usuario.getId(),
+                    resultadoPuntos.nivelAnterior(),
+                    resultadoPuntos.nivelNuevo(),
+                    resultadoPuntos.puntosAcumuladosNetos()
+            );
+        }
 
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
@@ -203,10 +229,21 @@ public class MovimientoService {
         BigDecimal nuevoSaldoDestino = destino.getSaldo().add(importe);
 
         origen.setSaldo(nuevoSaldoOrigen);
+        notificacionService.verificarYNotificarSaldoBajo(usuario.getId(), origen);
         destino.setSaldo(nuevoSaldoDestino);
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
                 usuario.getId(), TipoTransaccion.TRANSFERENCIA, importe, false);
+
+        // Notificar cambio de nivel
+        if (resultadoPuntos.ascendio()) {
+            notificacionService.notificarCambioNivel(
+                    usuario.getId(),
+                    resultadoPuntos.nivelAnterior(),
+                    resultadoPuntos.nivelNuevo(),
+                    resultadoPuntos.puntosAcumuladosNetos()
+            );
+        }
 
         Transaccion transaccion = new Transaccion(
                 repositorio.siguienteCodigoTransaccion(),
@@ -295,6 +332,7 @@ public class MovimientoService {
                 null
         );
         repositorio.registrarTransaccion(rechazada, usuarioId);
+        notificacionService.notificarRechazo(usuarioId, tipo, importe, mensajeError);
         throw new ReglaNegocioException(mensajeError);
     }
 
@@ -404,6 +442,7 @@ public class MovimientoService {
 
         if (origenCompensacion != null) {
             origenCompensacion.setSaldo(origenCompensacion.getSaldo().subtract(importe));
+            notificacionService.verificarYNotificarSaldoBajo(origenCompensacion.getPropietarioId(), origenCompensacion);
         }
 
         if (destinoCompensacion != null) {
