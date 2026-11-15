@@ -165,9 +165,17 @@ public class PrincipalController {
 
     private void actualizarBadgeNotificaciones() {
         if (btnNotificaciones == null || notificacionService == null || usuarioActivo == null) return;
-        notificacionService.despacharTodas(); // Procesa la cola FIFO pendiente
+        notificacionService.despacharTodas();
         long noLeidas = notificacionService.contarNoLeidas(usuarioActivo.getId());
-        btnNotificaciones.setText("Alertas (" + noLeidas + ")");
+        btnNotificaciones.setText("(" + noLeidas + ")");
+
+        if (btnNotificaciones.getGraphic() != null) {
+            if (noLeidas > 0) {
+                btnNotificaciones.getGraphic().getStyleClass().setAll("bell-icon", "bell-icon-activa");
+            } else {
+                btnNotificaciones.getGraphic().getStyleClass().setAll("bell-icon");
+            }
+        }
     }
 
     private void mostrarVista(Node vista, Button boton) {
