@@ -26,8 +26,13 @@ import java.util.List;
 
 public class ProgramadasController {
 
+    public ProgramadasController() {
+    }
+
     @FXML private ComboBox<String> cmbTipoOp;
+    @FXML private Label lblOrigenProg;
     @FXML private ComboBox<String> cmbOrigenProg;
+    @FXML private Label lblDestinoProg;
     @FXML private ComboBox<String> cmbDestinoProg;
     @FXML private TextField txtImporteProg;
     @FXML private DatePicker dpFecha;
@@ -67,6 +72,39 @@ public class ProgramadasController {
         tblProgramadas.setItems(listaProgramadas);
 
         cmbTipoOp.setItems(FXCollections.observableArrayList("Recarga", "Retiro", "Transferencia"));
+        cmbTipoOp.valueProperty().addListener((obs, viejo, nuevo) -> actualizarCamposPorTipo(nuevo));
+    }
+
+    private void actualizarCamposPorTipo(String tipo) {
+        if ("Recarga".equals(tipo)) {
+            if (lblOrigenProg != null) lblOrigenProg.setText("BILLETERA A RECARGAR");
+            if (cmbOrigenProg != null) cmbOrigenProg.setPromptText("Seleccione billetera a recargar...");
+            if (lblDestinoProg != null) lblDestinoProg.setText("BILLETERA DESTINO (No aplica)");
+            if (cmbDestinoProg != null) {
+                cmbDestinoProg.setDisable(true);
+                cmbDestinoProg.setValue(null);
+            }
+        } else if ("Retiro".equals(tipo)) {
+            if (lblOrigenProg != null) lblOrigenProg.setText("BILLETERA DE RETIRO");
+            if (cmbOrigenProg != null) cmbOrigenProg.setPromptText("Seleccione billetera de retiro...");
+            if (lblDestinoProg != null) lblDestinoProg.setText("BILLETERA DESTINO (No aplica)");
+            if (cmbDestinoProg != null) {
+                cmbDestinoProg.setDisable(true);
+                cmbDestinoProg.setValue(null);
+            }
+        } else if ("Transferencia".equals(tipo)) {
+            if (lblOrigenProg != null) lblOrigenProg.setText("BILLETERA ORIGEN");
+            if (cmbOrigenProg != null) cmbOrigenProg.setPromptText("Seleccione origen...");
+            if (lblDestinoProg != null) lblDestinoProg.setText("BILLETERA DESTINO");
+            if (cmbDestinoProg != null) {
+                cmbDestinoProg.setDisable(false);
+                cmbDestinoProg.setPromptText("Seleccione destino...");
+            }
+        } else {
+            if (lblOrigenProg != null) lblOrigenProg.setText("BILLETERA ORIGEN");
+            if (lblDestinoProg != null) lblDestinoProg.setText("BILLETERA DESTINO");
+            if (cmbDestinoProg != null) cmbDestinoProg.setDisable(false);
+        }
     }
 
     public void initServices(ProgramacionService programacionService, UsuarioService usuarioService,
@@ -147,17 +185,28 @@ public class ProgramadasController {
         String origenId = extraerIdBilletera(cmbOrigenProg.getValue());
         String destinoId = extraerIdBilletera(cmbDestinoProg.getValue());
 
-        if (tipo == TipoTransaccion.RECARGA && destinoId == null) {
+        if (tipo == TipoTransaccion.RECARGA) {
+            if (origenId == null) {
+                PrincipalController.mostrarAlerta("Seleccione la billetera a recargar.");
+                return;
+            }
             destinoId = origenId;
             origenId = null;
-        }
-        if (tipo == TipoTransaccion.TRANSFERENCIA && (origenId == null || destinoId == null)) {
-            PrincipalController.mostrarAlerta("Seleccione billetera origen y destino para transferencias.");
-            return;
-        }
-        if (tipo == TipoTransaccion.RETIRO && origenId == null) {
-            PrincipalController.mostrarAlerta("Seleccione billetera origen para retiros.");
-            return;
+        } else if (tipo == TipoTransaccion.RETIRO) {
+            if (origenId == null) {
+                PrincipalController.mostrarAlerta("Seleccione la billetera de la cual retirar.");
+                return;
+            }
+            destinoId = null;
+        } else if (tipo == TipoTransaccion.TRANSFERENCIA) {
+            if (origenId == null || destinoId == null) {
+                PrincipalController.mostrarAlerta("Seleccione billetera origen y destino para transferencias.");
+                return;
+            }
+            if (origenId.equals(destinoId)) {
+                PrincipalController.mostrarAlerta("La billetera origen y destino no pueden ser la misma.");
+                return;
+            }
         }
 
         String importe = txtImporteProg.getText();
@@ -196,6 +245,8 @@ public class ProgramadasController {
             txtImporteProg.clear();
             txtHora.clear();
             dpFecha.setValue(null);
+            cmbOrigenProg.setValue(null);
+            cmbDestinoProg.setValue(null);
             refrescarTabla();
             if (onDataChanged != null) onDataChanged.run();
         } catch (ReglaNegocioException e) {

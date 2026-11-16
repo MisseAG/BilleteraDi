@@ -16,9 +16,9 @@
             <Separator/>
             <Label text="TIPO DE OPERACION" styleClass="form-label"/>
             <ComboBox fx:id="cmbTipoOp" promptText="Seleccione tipo..." maxWidth="1.7976931348623157E308"/>
-            <Label text="BILLETERA ORIGEN" styleClass="form-label"/>
+            <Label fx:id="lblOrigenProg" text="BILLETERA ORIGEN" styleClass="form-label"/>
             <ComboBox fx:id="cmbOrigenProg" promptText="Seleccione origen..." maxWidth="1.7976931348623157E308"/>
-            <Label text="BILLETERA DESTINO" styleClass="form-label"/>
+            <Label fx:id="lblDestinoProg" text="BILLETERA DESTINO" styleClass="form-label"/>
             <ComboBox fx:id="cmbDestinoProg" promptText="Seleccione destino..." maxWidth="1.7976931348623157E308"/>
             <Label text="IMPORTE" styleClass="form-label"/>
             <TextField fx:id="txtImporteProg" promptText="0.00" styleClass="form-field"/>

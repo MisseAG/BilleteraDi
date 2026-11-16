@@ -23,6 +23,9 @@ import java.util.List;
  */
 public class BilleterasController {
 
+    public BilleterasController() {
+    }
+
     @FXML private TableView<Billetera> tblBilleteras;
     @FXML private TableColumn<Billetera, String> colCodigo;
     @FXML private TableColumn<Billetera, String> colNombreB;

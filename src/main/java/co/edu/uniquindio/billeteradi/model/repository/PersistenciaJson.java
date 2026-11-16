@@ -29,6 +29,9 @@ import java.util.List;
  */
 public class PersistenciaJson {
 
+    public PersistenciaJson() {
+    }
+
     private static final String DATA_DIR = "data";
     private static final String FILE_NAME = "billeteradi-data.json";
 

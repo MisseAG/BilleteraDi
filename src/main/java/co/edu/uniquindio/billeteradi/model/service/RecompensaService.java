@@ -133,7 +133,7 @@ public class RecompensaService {
         return bonoProgramada;
     }
 
-    public void setBonoProgramada(long bonoProgramada) {
+    public final void setBonoProgramada(long bonoProgramada) {
         if (bonoProgramada < 0) {
             throw new ReglaNegocioException("El bono de pago programado no puede ser negativo");
         }

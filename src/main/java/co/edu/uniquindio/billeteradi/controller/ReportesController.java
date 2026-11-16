@@ -2,9 +2,11 @@ package co.edu.uniquindio.billeteradi.controller;
 
 import co.edu.uniquindio.billeteradi.model.entity.RegistroConteo;
 import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
+import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
 import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
 import co.edu.uniquindio.billeteradi.model.service.AnaliticaService;
+import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -17,7 +19,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +39,7 @@ public class ReportesController {
 
     private AnaliticaService analiticaService;
     private UsuarioService usuarioService;
+    private RecompensaService recompensaService;
     private final ObservableList<String[]> listaResultados = FXCollections.observableArrayList();
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -47,6 +49,10 @@ public class ReportesController {
     private static final String R_USUARIOS_MAYOR_ACTIVIDAD = "Usuarios con mayor actividad (Top-K)";
     private static final String R_USUARIOS_MAS_TRANSFERENCIAS = "Usuarios con mas transferencias (Top-K)";
     private static final String R_MAYORES_MONTOS = "Transacciones de mayores montos (Top-K)";
+    private static final String R_RANKING_PUNTOS = "Ranking de usuarios por puntos (Top-K)";
+
+    public ReportesController() {
+    }
 
     @FXML
     public void initialize() {
@@ -61,15 +67,22 @@ public class ReportesController {
                 R_BILLETERAS_MAYOR_USO,
                 R_USUARIOS_MAYOR_ACTIVIDAD,
                 R_USUARIOS_MAS_TRANSFERENCIAS,
-                R_MAYORES_MONTOS
+                R_MAYORES_MONTOS,
+                R_RANKING_PUNTOS
         ));
 
         txtTopK.setText("5");
     }
 
     public void initServices(AnaliticaService analiticaService, UsuarioService usuarioService) {
+        initServices(analiticaService, usuarioService, null);
+    }
+
+    public void initServices(AnaliticaService analiticaService, UsuarioService usuarioService,
+                             RecompensaService recompensaService) {
         this.analiticaService = analiticaService;
         this.usuarioService = usuarioService;
+        this.recompensaService = recompensaService;
     }
 
     @FXML
@@ -109,6 +122,7 @@ public class ReportesController {
                 case R_USUARIOS_MAYOR_ACTIVIDAD -> generarUsuariosMayorActividad(inicio, fin, topK);
                 case R_USUARIOS_MAS_TRANSFERENCIAS -> generarUsuariosMasTransferencias(inicio, fin, topK);
                 case R_MAYORES_MONTOS -> generarMayoresMontos(topK);
+                case R_RANKING_PUNTOS -> generarRankingPuntos(topK);
                 default -> PrincipalController.mostrarAlerta("Reporte no reconocido.");
             }
         } catch (Exception e) {
@@ -206,6 +220,25 @@ public class ReportesController {
                     tx.getId(),
                     "$ " + tx.getImporte().toPlainString(),
                     formatearTipo(tx.getTipo().name()) + " — " + tx.getFecha().format(FMT)
+            });
+        }
+    }
+
+    private void generarRankingPuntos(int k) {
+        if (recompensaService == null) {
+            PrincipalController.mostrarAlerta("El servicio de recompensas no esta disponible.");
+            return;
+        }
+        List<Usuario> ranking = recompensaService.obtenerRankingOrdenado(k);
+        if (ranking.isEmpty()) {
+            PrincipalController.mostrarAlerta("No hay usuarios con puntos registrados en el ranking.");
+            return;
+        }
+        for (Usuario u : ranking) {
+            listaResultados.add(new String[]{
+                    u.getId(),
+                    u.getPuntosAcumuladosNetos() + " pts",
+                    u.getNombre() + " — Nivel " + u.getNivel().name() + " (" + u.getPuntosDisponibles() + " disp.)"
             });
         }
     }

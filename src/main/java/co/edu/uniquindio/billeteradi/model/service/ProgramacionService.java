@@ -18,6 +18,7 @@ public class ProgramacionService {
     private final MovimientoService movimientoService;
     private final NotificacionService notificacionService; // Opcional para RF12
     private final PriorityQueue<OperacionProgramada> pendientes;
+    private final List<OperacionProgramada> historico = new ArrayList<>();
     private long consecutivoProgramacion = 0;
 
     public ProgramacionService(RepositorioMemoria repositorio, MovimientoService movimientoService,
@@ -42,6 +43,7 @@ public class ProgramacionService {
         OperacionProgramada operacion = new OperacionProgramada(idProg, usuarioId, origenId, destinoId, tipo,
                 importe, fechaEjecucion, consecutivoProgramacion, EstadoProgramacion.PENDIENTE);
         pendientes.offer(operacion);
+        historico.add(operacion);
         return operacion;
     }
 
@@ -51,17 +53,22 @@ public class ProgramacionService {
             OperacionProgramada prog = pendientes.poll();
             if (prog.getEstado() == EstadoProgramacion.CANCELADA) {
                 continue;
-            }try {
+            }
+            try {
+                co.edu.uniquindio.billeteradi.model.entity.Transaccion tx;
                 switch (prog.getTipo()) {
-                    case RECARGA -> movimientoService.recargar(prog.getUsuarioId(), prog.getDestinoId(),
-                            prog.getImporte().toString());
-                    case RETIRO -> movimientoService.retirar(prog.getUsuarioId(), prog.getOrigenId(),
-                            prog.getImporte().toString());
-                    case TRANSFERENCIA -> movimientoService.transferir(prog.getUsuarioId(), prog.getOrigenId(),
-                            prog.getDestinoId(), prog.getImporte().toString());
+                    case RECARGA -> tx = movimientoService.recargar(prog.getUsuarioId(), prog.getDestinoId(),
+                            prog.getImporte().toString(), true);
+                    case RETIRO -> tx = movimientoService.retirar(prog.getUsuarioId(), prog.getOrigenId(),
+                            prog.getImporte().toString(), true);
+                    case TRANSFERENCIA -> tx = movimientoService.transferir(prog.getUsuarioId(), prog.getOrigenId(),
+                            prog.getDestinoId(), prog.getImporte().toString(), true);
                     default -> throw new IllegalArgumentException("Tipo de operación no soportado para programación");
                 }
                 prog.setEstado(EstadoProgramacion.EJECUTADA);
+                if (tx != null) {
+                    prog.setTransaccionGeneradaId(tx.getId());
+                }
             } catch (Exception e) {
                 prog.setEstado(EstadoProgramacion.FALLIDA);
                 if (notificacionService != null) {
@@ -73,7 +80,7 @@ public class ProgramacionService {
     }
 
     public List<OperacionProgramada> listarTodas() {
-        List<OperacionProgramada> todas = new ArrayList<>(pendientes);
+        List<OperacionProgramada> todas = new ArrayList<>(historico);
         todas.sort(Comparator.comparing(OperacionProgramada::getFechaEjecucion).reversed());
         return todas;
     }
@@ -87,6 +94,9 @@ public class ProgramacionService {
     }
 
     public void agregarDirecto(OperacionProgramada op) {
+        if (!historico.contains(op)) {
+            historico.add(op);
+        }
         if (op.getEstado() == EstadoProgramacion.PENDIENTE) {
             pendientes.offer(op);
         }

@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
  */
 public class UsuariosController {
 
+    public UsuariosController() {
+    }
+
     @FXML private TableView<Usuario> tblUsuarios;
     @FXML private TableColumn<Usuario, String> colId;
     @FXML private TableColumn<Usuario, String> colNombre;

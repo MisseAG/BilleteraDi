@@ -42,6 +42,9 @@ import java.util.regex.Pattern;
  */
 public class MovimientosController {
 
+    public MovimientosController() {
+    }
+
     @FXML private Button btnTabRecarga;
     @FXML private Button btnTabRetiro;
     @FXML private Button btnTabTransferencia;

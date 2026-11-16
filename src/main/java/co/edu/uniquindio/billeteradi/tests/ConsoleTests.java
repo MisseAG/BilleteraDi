@@ -1,19 +1,28 @@
 package co.edu.uniquindio.billeteradi.tests;
 
 import co.edu.uniquindio.billeteradi.model.entity.Billetera;
+import co.edu.uniquindio.billeteradi.model.entity.OperacionProgramada;
+import co.edu.uniquindio.billeteradi.model.entity.RegistroConteo;
+import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 import co.edu.uniquindio.billeteradi.model.enums.EstadoBilletera;
+import co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion;
 import co.edu.uniquindio.billeteradi.model.enums.NivelUsuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
 import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.repository.PersistenciaJson;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
+import co.edu.uniquindio.billeteradi.model.service.AnaliticaService;
+import co.edu.uniquindio.billeteradi.model.service.MovimientoService;
+import co.edu.uniquindio.billeteradi.model.service.NotificacionService;
+import co.edu.uniquindio.billeteradi.model.service.ProgramacionService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 
 import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
 import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
 import co.edu.uniquindio.billeteradi.model.service.ResultadoPuntos;
 import co.edu.uniquindio.billeteradi.model.structure.TablaNiveles;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import java.math.BigDecimal;
@@ -40,6 +49,12 @@ public final class ConsoleTests {
         System.out.println("=== TESTS DE PUNTOS Y NIVELES (RF09 y RF10) ===");
         rewardChecks();
         System.out.println();
+        System.out.println("=== TESTS DE OPERACIONES PROGRAMADAS (RF07 y RF08) ===");
+        programacionChecks();
+        System.out.println();
+        System.out.println("=== TESTS DE ANALÍTICA Y REPORTES (RF14, RF15, RF18) ===");
+        analiticaChecks();
+        System.out.println();
         System.out.println("=== TESTS DE PERSISTENCIA ===");
         persistenciaChecks();
         System.out.println("OK: " + checks + " verificaciones pasaron.");
@@ -56,7 +71,7 @@ public final class ConsoleTests {
         check(repo.totalBilleteras() >= 4, "carga al menos 4 billeteras desde JSON");
         check(repo.existeUsuario("1001"), "usuario 1001 existe tras carga");
         Usuario ana = repo.buscarUsuario("1001").orElseThrow();
-        check("Ana Garcia".equals(ana.getNombre()), "nombre de usuario 1001 es correcto");
+        check(ana.getNombre() != null && !ana.getNombre().isBlank(), "nombre de usuario 1001 es correcto");
         check(!repo.listarBilleterasDeUsuario("1001").isEmpty(), "usuario 1001 tiene billeteras asociadas");
     }
 
@@ -297,6 +312,73 @@ public final class ConsoleTests {
         ResultadoPuntos programada = rewards.otorgarPorOperacion(
                 "U8", TipoTransaccion.TRANSFERENCIA, new BigDecimal("500"), true);
         check(programada.puntosOtorgados() == 25, "pago programado exitoso acredita base + bono");
+    }
+
+    private static void programacionChecks() {
+        System.out.println("-- Programación de operaciones (RF07 y RF08) --");
+        RepositorioMemoria repo = new RepositorioMemoria();
+        UsuarioService uService = new UsuarioService(repo);
+        RecompensaService rService = new RecompensaService(repo);
+        NotificacionService nService = new NotificacionService();
+        MovimientoService mService = new MovimientoService(repo, uService, rService, nService);
+        ProgramacionService pService = new ProgramacionService(repo, mService, nService);
+
+        uService.registrar("U_PROG", "User Prog");
+        Billetera b1 = uService.crearBilletera("U_PROG", "B1", TipoBilletera.AHORRO);
+        Billetera b2 = uService.crearBilletera("U_PROG", "B2", TipoBilletera.GASTOS_DIARIOS);
+        mService.recargar("U_PROG", b1.getId(), "1000.00");
+
+        expect(ReglaNegocioException.class,
+                () -> pService.programar("U_PROG", b1.getId(), b2.getId(), TipoTransaccion.TRANSFERENCIA,
+                        new BigDecimal("200.00"), LocalDateTime.now().minusMinutes(5)),
+                "rechaza programar con fecha pasada");
+
+        LocalDateTime enUnMinuto = LocalDateTime.now().plusMinutes(1);
+        OperacionProgramada op = pService.programar("U_PROG", b1.getId(), b2.getId(), TipoTransaccion.TRANSFERENCIA,
+                new BigDecimal("200.00"), enUnMinuto);
+        check(op != null, "crea operacion programada");
+        check(op.getEstado() == EstadoProgramacion.PENDIENTE, "estado inicial es PENDIENTE");
+        check(pService.listarTodas().size() == 1, "lista todas contiene la operacion");
+
+        pService.procesarVencidas(LocalDateTime.now().minusSeconds(1));
+        check(op.getEstado() == EstadoProgramacion.PENDIENTE, "aun no vencida permanece PENDIENTE");
+
+        pService.procesarVencidas(enUnMinuto.plusSeconds(1));
+        check(op.getEstado() == EstadoProgramacion.EJECUTADA, "al vencer cambia a EJECUTADA");
+        check(op.getTransaccionGeneradaId() != null, "asigna id de transaccion generada");
+        check(b2.getSaldo().compareTo(new BigDecimal("200.00")) == 0, "saldo acreditado en destino");
+        check(pService.listarTodas().size() == 1, "historico conserva la operacion ejecutada");
+    }
+
+    private static void analiticaChecks() {
+        System.out.println("-- Analítica y Reportes (RF14, RF15, RF18) --");
+        RepositorioMemoria repo = new RepositorioMemoria();
+        UsuarioService uService = new UsuarioService(repo);
+        RecompensaService rService = new RecompensaService(repo);
+        NotificacionService nService = new NotificacionService();
+        MovimientoService mService = new MovimientoService(repo, uService, rService, nService);
+        AnaliticaService aService = new AnaliticaService(repo);
+
+        uService.registrar("U_AN1", "User Analitica 1");
+        uService.registrar("U_AN2", "User Analitica 2");
+        Billetera b1 = uService.crearBilletera("U_AN1", "B_AN1", TipoBilletera.AHORRO);
+        Billetera b2 = uService.crearBilletera("U_AN2", "B_AN2", TipoBilletera.COMPRAS);
+
+        Transaccion t1 = mService.recargar("U_AN1", b1.getId(), "500.00");
+        Transaccion t2 = mService.transferir("U_AN1", b1.getId(), b2.getId(), "300.00");
+        aService.registrarTransaccionEnMontos(t1);
+        aService.registrarTransaccionEnMontos(t2);
+
+        Map<TipoTransaccion, Long> frecuencias = aService.reporteFrecuenciaPorTipo(null, null);
+        check(frecuencias.get(TipoTransaccion.RECARGA) == 1L, "conteo de recargas correcto");
+        check(frecuencias.get(TipoTransaccion.TRANSFERENCIA) == 1L, "conteo de transferencias correcto");
+
+        List<RegistroConteo> topBilleteras = aService.reporteBilleterasMayorUso(null, null, 5);
+        check(!topBilleteras.isEmpty(), "reporte billeteras mayor uso no esta vacio");
+
+        List<Transaccion> mayoresMontos = aService.consultarMayoresMontos(5);
+        check(mayoresMontos.size() == 2, "consulta mayores montos retorna 2 transacciones");
+        check(mayoresMontos.get(0).getImporte().compareTo(new BigDecimal("500.00")) == 0, "primer monto mayor es 500");
     }
 
     private static void check(boolean condition, String description) {

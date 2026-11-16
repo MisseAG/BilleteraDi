@@ -29,6 +29,9 @@ import java.util.Optional;
  */
 public class PrincipalController {
 
+    public PrincipalController() {
+    }
+
     @FXML private ComboBox<String> cmbUsuarioActivo;
     @FXML private Label lblEstado;
     @FXML private Label lblNivel;
@@ -81,12 +84,17 @@ public class PrincipalController {
             persistencia.guardar(repositorio, programacionService);
         }
 
+        // Inicializar ranking de fidelización con los usuarios cargados
+        for (Usuario u : repositorio.listarUsuarios()) {
+            recompensaService.actualizarEnRanking(u.getId(), null, u.getPuntosAcumuladosNetos());
+        }
+
         // 2. Inyectar servicios a los subcontroladores con datos ya disponibles
         usuariosViewController.initServices(usuarioService, this::onDataChanged);
         billeterasViewController.initServices(usuarioService, this::onDataChanged);
         movimientosViewController.initServices(usuarioService, movimientoService, this::onDataChanged);
         programadasViewController.initServices(programacionService, usuarioService, this::onDataChanged);
-        reportesViewController.initServices(analiticaService, usuarioService);
+        reportesViewController.initServices(analiticaService, usuarioService, recompensaService);
 
         // 3. Poblar selector de usuario activo
         refrescarUsuarios();
@@ -108,6 +116,11 @@ public class PrincipalController {
     private void onDataChanged() {
         refrescarUsuarios();
         usuariosViewController.refrescar();
+        if (analiticaService != null) {
+            for (co.edu.uniquindio.billeteradi.model.entity.Transaccion tx : repositorio.listarTodasTransacciones()) {
+                analiticaService.registrarTransaccionEnMontos(tx);
+            }
+        }
         persistencia.guardar(repositorio, programacionService);
     }
 
