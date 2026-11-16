@@ -1,5 +1,6 @@
 package co.edu.uniquindio.billeteradi.controller;
 
+import co.edu.uniquindio.billeteradi.model.entity.Billetera;
 import co.edu.uniquindio.billeteradi.model.entity.Notificacion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
@@ -9,6 +10,8 @@ import co.edu.uniquindio.billeteradi.model.service.MovimientoService;
 import co.edu.uniquindio.billeteradi.model.service.NotificacionService;
 import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
+import co.edu.uniquindio.billeteradi.model.service.AnaliticaService;
+import co.edu.uniquindio.billeteradi.model.service.ProgramacionService;
 import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -26,6 +29,9 @@ import java.util.Optional;
  * Gestiona navegación lateral, usuario activo y sincronización entre módulos.
  */
 public class PrincipalController {
+
+    public PrincipalController() {
+    }
 
     @FXML private ComboBox<String> cmbUsuarioActivo;
     @FXML private Label lblEstado;
@@ -47,7 +53,9 @@ public class PrincipalController {
     @FXML private Node movimientosView;
     @FXML private MovimientosController movimientosViewController;
     @FXML private Node programadasView;
+    @FXML private ProgramadasController programadasViewController;
     @FXML private Node reportesView;
+    @FXML private ReportesController reportesViewController;
 
     private RepositorioMemoria repositorio;
     private UsuarioService usuarioService;
@@ -55,6 +63,8 @@ public class PrincipalController {
     private RecompensaService recompensaService;
     private NotificacionService notificacionService;
     private PersistenciaJson persistencia;
+    private AnaliticaService analiticaService;
+    private ProgramacionService programacionService;
 
     private Usuario usuarioActivo;
 
@@ -65,18 +75,27 @@ public class PrincipalController {
         recompensaService = new RecompensaService(repositorio);
         notificacionService = new NotificacionService();
         movimientoService = new MovimientoService(repositorio, usuarioService, recompensaService, notificacionService);
+        analiticaService = new AnaliticaService(repositorio);
+        programacionService = new ProgramacionService(repositorio, movimientoService, notificacionService);
         persistencia = new PersistenciaJson();
 
         // 1. Cargar datos primero (persistencia JSON o datos semilla)
-        if (!persistencia.cargar(repositorio, usuarioService)) {
+        if (!persistencia.cargar(repositorio, usuarioService, programacionService, analiticaService)) {
             cargarDatosSemilla();
-            persistencia.guardar(repositorio);
+            persistencia.guardar(repositorio, programacionService);
+        }
+
+        // Inicializar ranking de fidelización con los usuarios cargados
+        for (Usuario u : repositorio.listarUsuarios()) {
+            recompensaService.actualizarEnRanking(u.getId(), null, u.getPuntosAcumuladosNetos());
         }
 
         // 2. Inyectar servicios a los subcontroladores con datos ya disponibles
         usuariosViewController.initServices(usuarioService, this::onDataChanged);
         billeterasViewController.initServices(usuarioService, this::onDataChanged);
         movimientosViewController.initServices(usuarioService, movimientoService, this::onDataChanged);
+        programadasViewController.initServices(programacionService, usuarioService, this::onDataChanged);
+        reportesViewController.initServices(analiticaService, usuarioService, recompensaService);
 
         // 3. Poblar selector de usuario activo
         refrescarUsuarios();
@@ -86,19 +105,87 @@ public class PrincipalController {
     }
 
     private void cargarDatosSemilla() {
-        usuarioService.registrar("1001", "Ana Garcia");
-        usuarioService.registrar("1002", "Carlos Lopez");
-        usuarioService.registrar("1003", "Maria Rodriguez");
-        usuarioService.crearBilletera("1001", "Ahorro Personal", TipoBilletera.AHORRO);
-        usuarioService.crearBilletera("1001", "Gastos Diarios", TipoBilletera.GASTOS_DIARIOS);
-        usuarioService.crearBilletera("1002", "Inversiones", TipoBilletera.INVERSION);
-        usuarioService.crearBilletera("1003", "Compras Online", TipoBilletera.COMPRAS);
+        usuarioService.registrar("1001", "Andres Montenegro");
+        usuarioService.registrar("1002", "Nicolas Alaguna");
+        usuarioService.registrar("1003", "Augusto Mise");
+        usuarioService.registrar("1004", "Valentina Gomez");
+        usuarioService.registrar("1005", "Santiago Morales");
+        usuarioService.registrar("1006", "Camila Restrepo");
+
+        Usuario u1 = usuarioService.obtenerUsuario("1001");
+        u1.setPuntosAcumuladosNetos(5420);
+        u1.setPuntosDisponibles(5420);
+        u1.setNivel(co.edu.uniquindio.billeteradi.model.enums.NivelUsuario.PLATINO);
+
+        Usuario u2 = usuarioService.obtenerUsuario("1002");
+        u2.setPuntosAcumuladosNetos(2150);
+        u2.setPuntosDisponibles(2150);
+        u2.setNivel(co.edu.uniquindio.billeteradi.model.enums.NivelUsuario.ORO);
+
+        Usuario u3 = usuarioService.obtenerUsuario("1003");
+        u3.setPuntosAcumuladosNetos(750);
+        u3.setPuntosDisponibles(750);
+        u3.setNivel(co.edu.uniquindio.billeteradi.model.enums.NivelUsuario.PLATA);
+
+        Usuario u4 = usuarioService.obtenerUsuario("1004");
+        u4.setPuntosAcumuladosNetos(180);
+        u4.setPuntosDisponibles(180);
+        u4.setNivel(co.edu.uniquindio.billeteradi.model.enums.NivelUsuario.BRONCE);
+
+        Usuario u5 = usuarioService.obtenerUsuario("1005");
+        u5.setPuntosAcumuladosNetos(30);
+        u5.setPuntosDisponibles(30);
+        u5.setNivel(co.edu.uniquindio.billeteradi.model.enums.NivelUsuario.BRONCE);
+
+        Usuario u6 = usuarioService.obtenerUsuario("1006");
+        u6.setActivo(false);
+
+        Billetera b1 = usuarioService.crearBilletera("1001", "Ahorro Personal", TipoBilletera.AHORRO);
+        b1.setSaldo(new java.math.BigDecimal("2500.00"));
+        Billetera b2 = usuarioService.crearBilletera("1001", "Gastos Diarios", TipoBilletera.GASTOS_DIARIOS);
+        b2.setSaldo(new java.math.BigDecimal("35.00"));
+        Billetera b3 = usuarioService.crearBilletera("1001", "Fondo de Inversion", TipoBilletera.INVERSION);
+        b3.setSaldo(new java.math.BigDecimal("12000.00"));
+        Billetera b4 = usuarioService.crearBilletera("1001", "Compras Especiales", TipoBilletera.COMPRAS);
+        b4.setSaldo(new java.math.BigDecimal("150.00"));
+        b4.setEstado(co.edu.uniquindio.billeteradi.model.enums.EstadoBilletera.BLOQUEADA);
+
+        Billetera b5 = usuarioService.crearBilletera("1002", "Inversiones Cripto", TipoBilletera.INVERSION);
+        b5.setSaldo(new java.math.BigDecimal("4800.00"));
+        Billetera b6 = usuarioService.crearBilletera("1002", "Ahorro Vacaciones", TipoBilletera.AHORRO);
+        b6.setSaldo(new java.math.BigDecimal("920.00"));
+        Billetera b7 = usuarioService.crearBilletera("1002", "Transporte Masivo", TipoBilletera.TRANSPORTE);
+        b7.setSaldo(new java.math.BigDecimal("0.00"));
+
+        Billetera b8 = usuarioService.crearBilletera("1003", "Compras Online", TipoBilletera.COMPRAS);
+        b8.setSaldo(new java.math.BigDecimal("450.00"));
+        Billetera b9 = usuarioService.crearBilletera("1003", "Gastos Basicos", TipoBilletera.GASTOS_DIARIOS);
+        b9.setSaldo(new java.math.BigDecimal("0.00"));
+        Billetera b10 = usuarioService.crearBilletera("1003", "Ahorro Emergencias", TipoBilletera.AHORRO);
+        b10.setSaldo(new java.math.BigDecimal("1200.00"));
+
+        Billetera b11 = usuarioService.crearBilletera("1004", "Transporte Urbano", TipoBilletera.TRANSPORTE);
+        b11.setSaldo(new java.math.BigDecimal("25.00"));
+        Billetera b12 = usuarioService.crearBilletera("1004", "Gastos Compartidos", TipoBilletera.GASTOS_DIARIOS);
+        b12.setSaldo(new java.math.BigDecimal("300.00"));
+
+        Billetera b13 = usuarioService.crearBilletera("1005", "Ahorro Navideno", TipoBilletera.AHORRO);
+        b13.setSaldo(new java.math.BigDecimal("15.00"));
+
+        Billetera b14 = usuarioService.crearBilletera("1006", "Billetera Inactiva", TipoBilletera.GASTOS_DIARIOS);
+        b14.setSaldo(new java.math.BigDecimal("0.00"));
+        b14.setEstado(co.edu.uniquindio.billeteradi.model.enums.EstadoBilletera.BLOQUEADA);
     }
 
     private void onDataChanged() {
         refrescarUsuarios();
         usuariosViewController.refrescar();
-        persistencia.guardar(repositorio);
+        if (analiticaService != null) {
+            for (co.edu.uniquindio.billeteradi.model.entity.Transaccion tx : repositorio.listarTodasTransacciones()) {
+                analiticaService.registrarTransaccionEnMontos(tx);
+            }
+        }
+        persistencia.guardar(repositorio, programacionService);
     }
 
     public void refrescarUsuarios() {
@@ -160,6 +247,7 @@ public class PrincipalController {
 
         billeterasViewController.setUsuarioActivo(usuarioActivo);
         movimientosViewController.setUsuarioActivo(usuarioActivo);
+        programadasViewController.setUsuarioActivo(usuarioActivo);
         actualizarBadgeNotificaciones();
     }
 
@@ -265,7 +353,12 @@ public class PrincipalController {
 
     @FXML
     private void onNavProgramadas() {
+        if (usuarioActivo == null) {
+            mostrarAlerta("Seleccione un usuario activo antes de programar operaciones.");
+            return;
+        }
         mostrarVista(programadasView, btnNavProgramadas);
+        programadasViewController.refrescar();
     }
 
     @FXML

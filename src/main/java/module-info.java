@@ -1,6 +1,7 @@
 module co.edu.uniquindio.billeteradi {
     requires javafx.controls;
     requires javafx.fxml;
+    requires transitive javafx.graphics;
 
     opens co.edu.uniquindio.billeteradi to javafx.fxml;
     opens co.edu.uniquindio.billeteradi.controller to javafx.fxml;

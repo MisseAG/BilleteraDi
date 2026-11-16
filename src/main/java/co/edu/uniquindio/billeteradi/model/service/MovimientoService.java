@@ -45,6 +45,10 @@ public class MovimientoService {
     }
 
     public Transaccion recargar(String usuarioId, String billeteraId, String textoImporte) {
+        return recargar(usuarioId, billeteraId, textoImporte, false);
+    }
+
+    public Transaccion recargar(String usuarioId, String billeteraId, String textoImporte, boolean esProgramada) {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         validarUsuarioActivo(usuario);
         Billetera billetera = usuarioService.obtenerBilletera(billeteraId);
@@ -67,7 +71,7 @@ public class MovimientoService {
         billetera.setSaldo(nuevoSaldo);
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
-                usuario.getId(), TipoTransaccion.RECARGA, importe, false);
+                usuario.getId(), TipoTransaccion.RECARGA, importe, esProgramada);
 
         // Notificar cambio de nivel
         if (resultadoPuntos.ascendio()) {
@@ -97,6 +101,10 @@ public class MovimientoService {
     }
 
     public Transaccion retirar(String usuarioId, String billeteraId, String textoImporte) {
+        return retirar(usuarioId, billeteraId, textoImporte, false);
+    }
+
+    public Transaccion retirar(String usuarioId, String billeteraId, String textoImporte, boolean esProgramada) {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         validarUsuarioActivo(usuario);
         Billetera billetera = usuarioService.obtenerBilletera(billeteraId);
@@ -130,7 +138,7 @@ public class MovimientoService {
         notificacionService.verificarYNotificarSaldoBajo(usuario.getId(), billetera);
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
-                usuario.getId(), TipoTransaccion.RETIRO, importe, false);
+                usuario.getId(), TipoTransaccion.RETIRO, importe, esProgramada);
 
         // Notificar cambio de nivel
         if (resultadoPuntos.ascendio()) {
@@ -161,6 +169,11 @@ public class MovimientoService {
 
     public Transaccion transferir(String usuarioId, String billeteraOrigenId,
                                   String billeteraDestinoId, String textoImporte) {
+        return transferir(usuarioId, billeteraOrigenId, billeteraDestinoId, textoImporte, false);
+    }
+
+    public Transaccion transferir(String usuarioId, String billeteraOrigenId,
+                                  String billeteraDestinoId, String textoImporte, boolean esProgramada) {
         Usuario usuario = usuarioService.obtenerUsuario(usuarioId);
         validarUsuarioActivo(usuario);
         Billetera origen = usuarioService.obtenerBilletera(billeteraOrigenId);
@@ -233,7 +246,7 @@ public class MovimientoService {
         destino.setSaldo(nuevoSaldoDestino);
 
         ResultadoPuntos resultadoPuntos = recompensaService.otorgarPorOperacion(
-                usuario.getId(), TipoTransaccion.TRANSFERENCIA, importe, false);
+                usuario.getId(), TipoTransaccion.TRANSFERENCIA, importe, esProgramada);
 
         // Notificar cambio de nivel
         if (resultadoPuntos.ascendio()) {

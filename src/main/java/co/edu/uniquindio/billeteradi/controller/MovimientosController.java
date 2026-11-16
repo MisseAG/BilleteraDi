@@ -3,6 +3,8 @@ package co.edu.uniquindio.billeteradi.controller;
 import co.edu.uniquindio.billeteradi.model.entity.Billetera;
 import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
+import co.edu.uniquindio.billeteradi.model.enums.EstadoTransaccion;
+import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
 import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.service.MovimientoService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
@@ -14,6 +16,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TableColumn;
@@ -23,6 +26,8 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,6 +41,9 @@ import java.util.regex.Pattern;
  * Controlador de la vista de movimientos financieros (RF03, RF04, RF05).
  */
 public class MovimientosController {
+
+    public MovimientosController() {
+    }
 
     @FXML private Button btnTabRecarga;
     @FXML private Button btnTabRetiro;
@@ -66,6 +74,12 @@ public class MovimientosController {
     @FXML private Label lblRegistrosTx;
     @FXML private Button btnRevertir;
 
+    @FXML private ComboBox<String> cmbFiltroTipo;
+    @FXML private ComboBox<String> cmbFiltroEstado;
+    @FXML private ComboBox<String> cmbFiltroBilletera;
+    @FXML private DatePicker dpFiltroDesde;
+    @FXML private DatePicker dpFiltroHasta;
+
     private UsuarioService usuarioService;
     private MovimientoService movimientoService;
     private Runnable onDataChanged;
@@ -95,7 +109,26 @@ public class MovimientosController {
         aplicarFormatterImporte(txtImporteTransferencia);
 
         configurarCellFactoryDestino();
+        configurarFiltros();
         mostrarTab("recarga");
+    }
+
+    private void configurarFiltros() {
+        cmbFiltroTipo.setItems(FXCollections.observableArrayList(
+                "Todos", "Recarga", "Retiro", "Transferencia", "Reversión"
+        ));
+        cmbFiltroTipo.setValue("Todos");
+        cmbFiltroTipo.setOnAction(e -> cargarHistorial());
+
+        cmbFiltroEstado.setItems(FXCollections.observableArrayList(
+                "Todos", "Exitosa", "Rechazada", "Revertida"
+        ));
+        cmbFiltroEstado.setValue("Todos");
+        cmbFiltroEstado.setOnAction(e -> cargarHistorial());
+
+        cmbFiltroBilletera.setOnAction(e -> cargarHistorial());
+        dpFiltroDesde.setOnAction(e -> cargarHistorial());
+        dpFiltroHasta.setOnAction(e -> cargarHistorial());
     }
 
     public void initServices(UsuarioService us, MovimientoService ms, Runnable onDataChanged) {
@@ -172,6 +205,20 @@ public class MovimientosController {
         cmbBilleteraRetiro.setItems(FXCollections.observableArrayList(itemsPropias));
         cmbOrigenTransferencia.setItems(FXCollections.observableArrayList(itemsPropias));
 
+        if (cmbFiltroBilletera != null) {
+            ObservableList<String> itemsFiltro = FXCollections.observableArrayList("Todas");
+            for (Billetera b : propias) {
+                itemsFiltro.add(b.getId() + " — " + b.getNombre());
+            }
+            String selActual = cmbFiltroBilletera.getValue();
+            cmbFiltroBilletera.setItems(itemsFiltro);
+            if (selActual != null && itemsFiltro.contains(selActual)) {
+                cmbFiltroBilletera.setValue(selActual);
+            } else {
+                cmbFiltroBilletera.setValue("Todas");
+            }
+        }
+
         cargarComboDestinoAgrupado(propias);
     }
 
@@ -212,9 +259,55 @@ public class MovimientosController {
             lblRegistrosTx.setText("0 transacciones");
             return;
         }
-        List<Transaccion> txs = movimientoService.listarTransacciones(usuarioActivo.getId());
+
+        TipoTransaccion tipo = null;
+        String tipoSel = cmbFiltroTipo != null ? cmbFiltroTipo.getValue() : null;
+        if (tipoSel != null && !tipoSel.equals("Todos")) {
+            tipo = switch (tipoSel) {
+                case "Recarga" -> TipoTransaccion.RECARGA;
+                case "Retiro" -> TipoTransaccion.RETIRO;
+                case "Transferencia" -> TipoTransaccion.TRANSFERENCIA;
+                case "Reversión" -> TipoTransaccion.REVERSION;
+                default -> null;
+            };
+        }
+
+        EstadoTransaccion estado = null;
+        String estadoSel = cmbFiltroEstado != null ? cmbFiltroEstado.getValue() : null;
+        if (estadoSel != null && !estadoSel.equals("Todos")) {
+            estado = switch (estadoSel) {
+                case "Exitosa" -> EstadoTransaccion.EXITOSA;
+                case "Rechazada" -> EstadoTransaccion.RECHAZADA;
+                case "Revertida" -> EstadoTransaccion.REVERTIDA;
+                default -> null;
+            };
+        }
+
+        String bilSel = cmbFiltroBilletera != null ? cmbFiltroBilletera.getValue() : null;
+        String billeteraId = null;
+        if (bilSel != null && !bilSel.equals("Todas")) {
+            billeteraId = extraerIdBilletera(bilSel);
+        }
+
+        LocalDateTime inicio = (dpFiltroDesde != null && dpFiltroDesde.getValue() != null)
+                ? dpFiltroDesde.getValue().atStartOfDay() : null;
+        LocalDateTime fin = (dpFiltroHasta != null && dpFiltroHasta.getValue() != null)
+                ? dpFiltroHasta.getValue().atTime(LocalTime.MAX) : null;
+
+        List<Transaccion> txs = movimientoService.consultarHistorial(
+                usuarioActivo.getId(), billeteraId, tipo, estado, inicio, fin);
         listaTransacciones.setAll(txs);
         lblRegistrosTx.setText(txs.size() + " transacciones");
+    }
+
+    @FXML
+    private void onLimpiarFiltros() {
+        if (cmbFiltroTipo != null) cmbFiltroTipo.setValue("Todos");
+        if (cmbFiltroEstado != null) cmbFiltroEstado.setValue("Todos");
+        if (cmbFiltroBilletera != null) cmbFiltroBilletera.setValue("Todas");
+        if (dpFiltroDesde != null) dpFiltroDesde.setValue(null);
+        if (dpFiltroHasta != null) dpFiltroHasta.setValue(null);
+        cargarHistorial();
     }
 
     // Auxiliar para revertir última operación

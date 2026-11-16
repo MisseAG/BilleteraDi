@@ -1,13 +1,17 @@
 package co.edu.uniquindio.billeteradi.model.repository;
 
 import co.edu.uniquindio.billeteradi.model.entity.Billetera;
+import co.edu.uniquindio.billeteradi.model.entity.OperacionProgramada;
 import co.edu.uniquindio.billeteradi.model.entity.Transaccion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 import co.edu.uniquindio.billeteradi.model.enums.EstadoBilletera;
+import co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion;
 import co.edu.uniquindio.billeteradi.model.enums.EstadoTransaccion;
 import co.edu.uniquindio.billeteradi.model.enums.NivelUsuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
 import co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion;
+import co.edu.uniquindio.billeteradi.model.service.AnaliticaService;
+import co.edu.uniquindio.billeteradi.model.service.ProgramacionService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 
 import java.io.IOException;
@@ -24,6 +28,9 @@ import java.util.List;
  * Persistencia en formato JSON sin dependencias externas.
  */
 public class PersistenciaJson {
+
+    public PersistenciaJson() {
+    }
 
     private static final String DATA_DIR = "data";
     private static final String FILE_NAME = "billeteradi-data.json";
@@ -106,6 +113,101 @@ public class PersistenciaJson {
         }
     }
 
+    public void guardar(RepositorioMemoria repo, ProgramacionService programacionService) {
+        try {
+            Files.createDirectories(Paths.get(DATA_DIR));
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\n");
+
+            List<Usuario> usuarios = repo.listarUsuarios();
+            sb.append("  \"usuarios\": [\n");
+            for (int i = 0; i < usuarios.size(); i++) {
+                Usuario u = usuarios.get(i);
+                sb.append("    {");
+                sb.append("\"id\": ").append(jsonStr(u.getId())).append(", ");
+                sb.append("\"nombre\": ").append(jsonStr(u.getNombre())).append(", ");
+                sb.append("\"activo\": ").append(u.isActivo()).append(", ");
+                sb.append("\"puntosAcumuladosNetos\": ").append(u.getPuntosAcumuladosNetos()).append(", ");
+                sb.append("\"puntosDisponibles\": ").append(u.getPuntosDisponibles()).append(", ");
+                sb.append("\"nivel\": ").append(jsonStr(u.getNivel().name()));
+                sb.append("}");
+                if (i < usuarios.size() - 1) sb.append(",");
+                sb.append("\n");
+            }
+            sb.append("  ],\n");
+
+            List<Billetera> billeteras = repo.listarTodasBilleteras();
+            sb.append("  \"billeteras\": [\n");
+            for (int i = 0; i < billeteras.size(); i++) {
+                Billetera b = billeteras.get(i);
+                sb.append("    {");
+                sb.append("\"id\": ").append(jsonStr(b.getId())).append(", ");
+                sb.append("\"propietarioId\": ").append(jsonStr(b.getPropietarioId())).append(", ");
+                sb.append("\"nombre\": ").append(jsonStr(b.getNombre())).append(", ");
+                sb.append("\"tipo\": ").append(jsonStr(b.getTipo().name())).append(", ");
+                sb.append("\"saldo\": ").append(jsonStr(b.getSaldo().toPlainString())).append(", ");
+                sb.append("\"estado\": ").append(jsonStr(b.getEstado().name()));
+                sb.append("}");
+                if (i < billeteras.size() - 1) sb.append(",");
+                sb.append("\n");
+            }
+            sb.append("  ],\n");
+
+            List<Transaccion> txs = repo.listarTodasTransacciones();
+            sb.append("  \"transacciones\": [\n");
+            for (int i = 0; i < txs.size(); i++) {
+                Transaccion tx = txs.get(i);
+                sb.append("    {");
+                sb.append("\"id\": ").append(jsonStr(tx.getId())).append(", ");
+                sb.append("\"fecha\": ").append(jsonStr(tx.getFecha().toString())).append(", ");
+                sb.append("\"tipo\": ").append(jsonStr(tx.getTipo().name())).append(", ");
+                sb.append("\"importe\": ").append(jsonStr(tx.getImporte().toPlainString())).append(", ");
+                sb.append("\"origenId\": ").append(tx.getOrigenId() != null ? jsonStr(tx.getOrigenId()) : "null").append(", ");
+                sb.append("\"destinoId\": ").append(tx.getDestinoId() != null ? jsonStr(tx.getDestinoId()) : "null").append(", ");
+                sb.append("\"estado\": ").append(jsonStr(tx.getEstado().name())).append(", ");
+                sb.append("\"puntosGenerados\": ").append(tx.getPuntosGenerados()).append(", ");
+                sb.append("\"transaccionOriginalId\": ").append(tx.getTransaccionOriginalId() != null ? jsonStr(tx.getTransaccionOriginalId()) : "null");
+                sb.append("}");
+                if (i < txs.size() - 1) sb.append(",");
+                sb.append("\n");
+            }
+            sb.append("  ],\n");
+
+            sb.append("  \"consecutivoBilletera\": ").append(repo.getConsecutivoBilletera()).append(",\n");
+            sb.append("  \"consecutivoTransaccion\": ").append(repo.getConsecutivoTransaccion()).append(",\n");
+
+            if (programacionService != null) {
+                List<OperacionProgramada> ops = programacionService.listarTodas();
+                sb.append("  \"operacionesProgramadas\": [\n");
+                for (int i = 0; i < ops.size(); i++) {
+                    OperacionProgramada op = ops.get(i);
+                    sb.append("    {");
+                    sb.append("\"id\": ").append(jsonStr(op.getId())).append(", ");
+                    sb.append("\"usuarioId\": ").append(jsonStr(op.getUsuarioId())).append(", ");
+                    sb.append("\"origenId\": ").append(op.getOrigenId() != null ? jsonStr(op.getOrigenId()) : "null").append(", ");
+                    sb.append("\"destinoId\": ").append(op.getDestinoId() != null ? jsonStr(op.getDestinoId()) : "null").append(", ");
+                    sb.append("\"tipo\": ").append(jsonStr(op.getTipo().name())).append(", ");
+                    sb.append("\"importe\": ").append(jsonStr(op.getImporte().toPlainString())).append(", ");
+                    sb.append("\"fechaEjecucion\": ").append(jsonStr(op.getFechaEjecucion().toString())).append(", ");
+                    sb.append("\"consecutivo\": ").append(op.getConsecutivo()).append(", ");
+                    sb.append("\"estado\": ").append(jsonStr(op.getEstado().name()));
+                    sb.append("}");
+                    if (i < ops.size() - 1) sb.append(",");
+                    sb.append("\n");
+                }
+                sb.append("  ],\n");
+                sb.append("  \"consecutivoProgramacion\": ").append(programacionService.getConsecutivoProgramacion()).append("\n");
+            } else {
+                sb.append("  \"operacionesProgramadas\": [],\n");
+                sb.append("  \"consecutivoProgramacion\": 0\n");
+            }
+
+            sb.append("}\n");
+            Files.writeString(getFilePath(), sb.toString(), StandardCharsets.UTF_8);
+        } catch (IOException ignored) {
+        }
+    }
+
     public boolean cargar(RepositorioMemoria repo, UsuarioService usuarioService) {
         Path path = getFilePath();
         if (!Files.exists(path)) {
@@ -117,6 +219,58 @@ public class PersistenciaJson {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    public boolean cargar(RepositorioMemoria repo, UsuarioService usuarioService,
+                          ProgramacionService programacionService, AnaliticaService analiticaService) {
+        boolean resultado = cargar(repo, usuarioService);
+        if (!resultado) return false;
+
+        try {
+            String contenido = Files.readString(getFilePath(), StandardCharsets.UTF_8);
+
+            if (programacionService != null) {
+                String seccionOps = extraerArray(contenido, "operacionesProgramadas");
+                if (seccionOps != null) {
+                    List<String> objetos = extraerObjetos(seccionOps);
+                    for (String obj : objetos) {
+                        String id = extraerValorStr(obj, "id");
+                        String usuarioId = extraerValorStr(obj, "usuarioId");
+                        String origenId = extraerValorStrNullable(obj, "origenId");
+                        String destinoId = extraerValorStrNullable(obj, "destinoId");
+                        String tipo = extraerValorStr(obj, "tipo");
+                        String importe = extraerValorStr(obj, "importe");
+                        String fechaEj = extraerValorStr(obj, "fechaEjecucion");
+                        long consecutivo = extraerValorLong(obj, "consecutivo");
+                        String estado = extraerValorStr(obj, "estado");
+
+                        if (id == null || usuarioId == null || tipo == null
+                                || importe == null || fechaEj == null || estado == null) continue;
+
+                        OperacionProgramada op = new OperacionProgramada(
+                                id, usuarioId, origenId, destinoId,
+                                TipoTransaccion.valueOf(tipo),
+                                new BigDecimal(importe),
+                                LocalDateTime.parse(fechaEj),
+                                consecutivo,
+                                EstadoProgramacion.valueOf(estado)
+                        );
+                        programacionService.agregarDirecto(op);
+                    }
+                }
+                long consProg = extraerValorLong(contenido, "consecutivoProgramacion");
+                programacionService.setConsecutivoProgramacion(consProg);
+            }
+
+            if (analiticaService != null) {
+                for (Transaccion tx : repo.listarTodasTransacciones()) {
+                    analiticaService.registrarTransaccionEnMontos(tx);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return true;
     }
 
     private boolean parsearJson(String json, RepositorioMemoria repo) {

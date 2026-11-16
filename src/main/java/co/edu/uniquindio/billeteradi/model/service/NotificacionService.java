@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class NotificacionService {
+
+    public NotificacionService() {
+    }
     private static final int TOPE_RECIENTES = 20;
     public static final BigDecimal UMBRAL_SALDO_BAJO_DEFECTO = new BigDecimal("50.00");
 
