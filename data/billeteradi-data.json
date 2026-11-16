@@ -2,7 +2,7 @@
   "usuarios": [
     {"id": "1001", "nombre": "Andres Montenegro", "activo": true, "puntosAcumuladosNetos": 5420, "puntosDisponibles": 5420, "nivel": "PLATINO"},
     {"id": "1002", "nombre": "Nicolas Alaguna", "activo": true, "puntosAcumuladosNetos": 2150, "puntosDisponibles": 2150, "nivel": "ORO"},
-    {"id": "1003", "nombre": "Augusto Mise", "activo": true, "puntosAcumuladosNetos": 750, "puntosDisponibles": 750, "nivel": "PLATA"},
+    {"id": "1003", "nombre": "Augusto Misse", "activo": true, "puntosAcumuladosNetos": 750, "puntosDisponibles": 750, "nivel": "PLATA"},
     {"id": "1004", "nombre": "Valentina Gomez", "activo": true, "puntosAcumuladosNetos": 180, "puntosDisponibles": 180, "nivel": "BRONCE"},
     {"id": "1005", "nombre": "Santiago Morales", "activo": true, "puntosAcumuladosNetos": 30, "puntosDisponibles": 30, "nivel": "BRONCE"},
     {"id": "1006", "nombre": "Camila Restrepo", "activo": false, "puntosAcumuladosNetos": 0, "puntosDisponibles": 0, "nivel": "BRONCE"}
