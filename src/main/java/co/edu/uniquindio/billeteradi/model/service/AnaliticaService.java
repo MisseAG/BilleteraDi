@@ -241,16 +241,14 @@ public class AnaliticaService {
         if (limite <= 0) {
             return resultado;
         }
-        //se usa navigableMap porque permite buscar claves y valores que cumplen con criterios de búsqueda específicos
-        //ya que permite acceder a las claves y valores de un map de manera ordenada, no sé si cambiarlo
-        NavigableMap<BigDecimal, List<String>> mapaDescendente = transaccionesPorMonto.descendingMap();
-        for (Map.Entry<BigDecimal, List<String>> entrada : mapaDescendente.entrySet()) {
-            List<String> idsTransacciones = entrada.getValue();
+        // descendingKeySet() entrega únicamente las claves (los montos) de mayor a menor
+        for (BigDecimal monto : transaccionesPorMonto.descendingKeySet()) {
+            List<String> idsTransacciones = transaccionesPorMonto.get(monto);
             for (String txId : idsTransacciones) {
                 Optional<Transaccion> optTx = repositorio.buscarTransaccion(txId);
                 if (optTx.isPresent()) {
                     Transaccion tx = optTx.get();
-                    // Verificación adicional de seguridad: que siga siendo efectiva[cite: 1]
+                    // Verificación de seguridad: que siga siendo efectiva
                     if (tx.getEstado() == EstadoTransaccion.EXITOSA && tx.getTipo() != TipoTransaccion.REVERSION) {
                         resultado.add(tx);
                         if (resultado.size() >= limite) {
