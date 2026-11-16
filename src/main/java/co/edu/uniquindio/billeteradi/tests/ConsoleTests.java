@@ -348,6 +348,24 @@ public final class ConsoleTests {
         check(op.getTransaccionGeneradaId() != null, "asigna id de transaccion generada");
         check(b2.getSaldo().compareTo(new BigDecimal("200.00")) == 0, "saldo acreditado en destino");
         check(pService.listarTodas().size() == 1, "historico conserva la operacion ejecutada");
+
+        // Retiro sin saldo al procesar vencidas -> debe quedar FALLIDA
+        Billetera bVacia = uService.crearBilletera("U_PROG", "BVacia", TipoBilletera.TRANSPORTE);
+        LocalDateTime enDosMin = LocalDateTime.now().plusMinutes(2);
+        OperacionProgramada opRetiroFallo = pService.programar("U_PROG", bVacia.getId(), null,
+                TipoTransaccion.RETIRO, new BigDecimal("100.00"), enDosMin);
+        check(opRetiroFallo.getEstado() == EstadoProgramacion.PENDIENTE, "retiro programado inicia PENDIENTE");
+
+        int procesadas = pService.procesarVencidas(enDosMin.plusSeconds(1));
+        check(procesadas == 1, "procesarVencidas retorna 1 operacion procesada");
+        check(opRetiroFallo.getEstado() == EstadoProgramacion.FALLIDA, "retiro sin saldo pasa a FALLIDA");
+
+        // Ejecutar directa de una pendiente
+        LocalDateTime enTresMin = LocalDateTime.now().plusMinutes(3);
+        OperacionProgramada opDirecta = pService.programar("U_PROG", bVacia.getId(), null,
+                TipoTransaccion.RETIRO, new BigDecimal("50.00"), enTresMin);
+        pService.ejecutarOperacion(opDirecta);
+        check(opDirecta.getEstado() == EstadoProgramacion.FALLIDA, "ejecutarOperacion directa pasa a FALLIDA por fondos");
     }
 
     private static void analiticaChecks() {

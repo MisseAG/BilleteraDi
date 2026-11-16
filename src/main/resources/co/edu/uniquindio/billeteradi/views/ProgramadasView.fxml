@@ -29,6 +29,8 @@
             <Region VBox.vgrow="ALWAYS"/>
             <Button text="Programar" onAction="#onProgramar" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
             <Button text="Procesar Vencidas" onAction="#onProcesarVencidas" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            <Button text="Ejecutar Seleccionada" onAction="#onEjecutarSeleccionada" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
+            <Button text="Forzar Todas las Pendientes" onAction="#onForzarTodas" styleClass="accent-button" maxWidth="1.7976931348623157E308"/>
             <Button text="Cancelar Seleccionada" onAction="#onCancelar" styleClass="danger-button" maxWidth="1.7976931348623157E308"/>
         </VBox>
 

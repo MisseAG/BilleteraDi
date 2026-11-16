@@ -48,33 +48,69 @@ public class ProgramacionService {
     }
 
     //RF08
-    public void procesarVencidas(LocalDateTime tiempoActual) {
+    public int procesarVencidas(LocalDateTime tiempoActual) {
+        int contador = 0;
         while (!pendientes.isEmpty() && !pendientes.peek().getFechaEjecucion().isAfter(tiempoActual)) {
             OperacionProgramada prog = pendientes.poll();
             if (prog.getEstado() == EstadoProgramacion.CANCELADA) {
                 continue;
             }
-            try {
-                co.edu.uniquindio.billeteradi.model.entity.Transaccion tx;
-                switch (prog.getTipo()) {
-                    case RECARGA -> tx = movimientoService.recargar(prog.getUsuarioId(), prog.getDestinoId(),
-                            prog.getImporte().toString(), true);
-                    case RETIRO -> tx = movimientoService.retirar(prog.getUsuarioId(), prog.getOrigenId(),
-                            prog.getImporte().toString(), true);
-                    case TRANSFERENCIA -> tx = movimientoService.transferir(prog.getUsuarioId(), prog.getOrigenId(),
-                            prog.getDestinoId(), prog.getImporte().toString(), true);
-                    default -> throw new IllegalArgumentException("Tipo de operación no soportado para programación");
-                }
-                prog.setEstado(EstadoProgramacion.EJECUTADA);
-                if (tx != null) {
-                    prog.setTransaccionGeneradaId(tx.getId());
-                }
-            } catch (Exception e) {
-                prog.setEstado(EstadoProgramacion.FALLIDA);
-                if (notificacionService != null) {
-                    notificacionService.notificar(prog.getUsuarioId(), "La programación " + prog.getId() +
-                            " falló: " + e.getMessage());
-                }
+            ejecutarUna(prog);
+            contador++;
+        }
+        return contador;
+    }
+
+    public int procesarTodasPendientes() {
+        int contador = 0;
+        while (!pendientes.isEmpty()) {
+            OperacionProgramada prog = pendientes.poll();
+            if (prog.getEstado() == EstadoProgramacion.CANCELADA) {
+                continue;
+            }
+            ejecutarUna(prog);
+            contador++;
+        }
+        return contador;
+    }
+
+    public void ejecutarOperacion(OperacionProgramada prog) {
+        if (prog == null) return;
+        if (prog.getEstado() == EstadoProgramacion.CANCELADA) {
+            pendientes.remove(prog);
+            return;
+        }
+        pendientes.remove(prog);
+        ejecutarUna(prog);
+    }
+
+    public void removerDePendientes(OperacionProgramada op) {
+        if (op != null) {
+            pendientes.remove(op);
+        }
+    }
+
+    private void ejecutarUna(OperacionProgramada prog) {
+        try {
+            co.edu.uniquindio.billeteradi.model.entity.Transaccion tx;
+            switch (prog.getTipo()) {
+                case RECARGA -> tx = movimientoService.recargar(prog.getUsuarioId(), prog.getDestinoId(),
+                        prog.getImporte().toString(), true);
+                case RETIRO -> tx = movimientoService.retirar(prog.getUsuarioId(), prog.getOrigenId(),
+                        prog.getImporte().toString(), true);
+                case TRANSFERENCIA -> tx = movimientoService.transferir(prog.getUsuarioId(), prog.getOrigenId(),
+                        prog.getDestinoId(), prog.getImporte().toString(), true);
+                default -> throw new IllegalArgumentException("Tipo de operación no soportado para programación");
+            }
+            prog.setEstado(EstadoProgramacion.EJECUTADA);
+            if (tx != null) {
+                prog.setTransaccionGeneradaId(tx.getId());
+            }
+        } catch (Exception e) {
+            prog.setEstado(EstadoProgramacion.FALLIDA);
+            if (notificacionService != null) {
+                notificacionService.notificar(prog.getUsuarioId(), "La programación " + prog.getId() +
+                        " falló: " + e.getMessage());
             }
         }
     }

@@ -261,12 +261,78 @@ public class ProgramadasController {
             return;
         }
         try {
-            programacionService.procesarVencidas(LocalDateTime.now());
-            PrincipalController.mostrarExito("Se procesaron las operaciones vencidas.");
+            int procesadas = programacionService.procesarVencidas(LocalDateTime.now());
+            if (procesadas > 0) {
+                PrincipalController.mostrarExito("Se procesaron " + procesadas + " operacion(es) vencida(s).");
+            } else {
+                long totalPendientes = programacionService.listarTodas().stream()
+                        .filter(op -> op.getEstado() == co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion.PENDIENTE)
+                        .count();
+                if (totalPendientes == 0) {
+                    PrincipalController.mostrarAlerta("No hay operaciones pendientes por procesar.");
+                } else {
+                    PrincipalController.mostrarAlerta(
+                            "No hay operaciones vencidas a la fecha y hora actual.\n\n"
+                            + "Hay " + totalPendientes + " operacion(es) pendiente(s) programada(s) para mas adelante.\n"
+                            + "Para ejecutarlas inmediatamente sin esperar la fecha, seleccione la fila y use 'Ejecutar Seleccionada', o use 'Forzar Todas las Pendientes'.");
+                }
+            }
             refrescarTabla();
             if (onDataChanged != null) onDataChanged.run();
         } catch (Exception e) {
             PrincipalController.mostrarError("Error al procesar vencidas: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onEjecutarSeleccionada() {
+        if (programacionService == null) {
+            PrincipalController.mostrarAlerta("Servicio de programacion no disponible.");
+            return;
+        }
+        OperacionProgramada seleccionada = tblProgramadas.getSelectionModel().getSelectedItem();
+        if (seleccionada == null) {
+            PrincipalController.mostrarAlerta("Seleccione una operacion de la tabla para ejecutarla.");
+            return;
+        }
+        if (seleccionada.getEstado() != co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion.PENDIENTE) {
+            PrincipalController.mostrarAlerta("Solo se pueden ejecutar operaciones en estado PENDIENTE.");
+            return;
+        }
+
+        try {
+            programacionService.ejecutarOperacion(seleccionada);
+            if (seleccionada.getEstado() == co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion.EJECUTADA) {
+                PrincipalController.mostrarExito("Operacion " + seleccionada.getId() + " ejecutada exitosamente.\n"
+                        + "Transaccion generada: " + seleccionada.getTransaccionGeneradaId());
+            } else if (seleccionada.getEstado() == co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion.FALLIDA) {
+                PrincipalController.mostrarAlerta("La operacion " + seleccionada.getId() + " fallo al ejecutarse.\n"
+                        + "El estado se actualizo a FALLIDA (verifique fondos o estado de la billetera).");
+            }
+            refrescarTabla();
+            if (onDataChanged != null) onDataChanged.run();
+        } catch (Exception e) {
+            PrincipalController.mostrarError("Error al ejecutar operacion: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onForzarTodas() {
+        if (programacionService == null) {
+            PrincipalController.mostrarAlerta("Servicio de programacion no disponible.");
+            return;
+        }
+        try {
+            int procesadas = programacionService.procesarTodasPendientes();
+            if (procesadas > 0) {
+                PrincipalController.mostrarExito("Se ejecuto el procesamiento forzado de " + procesadas + " operacion(es) pendiente(s).");
+            } else {
+                PrincipalController.mostrarAlerta("No hay operaciones pendientes por ejecutar.");
+            }
+            refrescarTabla();
+            if (onDataChanged != null) onDataChanged.run();
+        } catch (Exception e) {
+            PrincipalController.mostrarError("Error al forzar ejecucion: " + e.getMessage());
         }
     }
 
@@ -282,6 +348,7 @@ public class ProgramadasController {
             return;
         }
         seleccionada.setEstado(co.edu.uniquindio.billeteradi.model.enums.EstadoProgramacion.CANCELADA);
+        programacionService.removerDePendientes(seleccionada);
         PrincipalController.mostrarExito("Operacion " + seleccionada.getId() + " cancelada.");
         refrescarTabla();
         if (onDataChanged != null) onDataChanged.run();
