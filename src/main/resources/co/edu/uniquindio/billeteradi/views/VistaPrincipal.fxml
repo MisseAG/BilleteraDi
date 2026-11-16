@@ -59,6 +59,13 @@
             <Label fx:id="lblNivel" styleClass="badge-nivel"/>
             <Label text="|" styleClass="top-bar-divider"/>
             <Label fx:id="lblPuntos" styleClass="badge-puntos"/>
+            <Label text="|" styleClass="top-bar-divider"/>
+            <Button fx:id="btnNotificaciones" text="(0)" onAction="#onVerNotificaciones"
+                    styleClass="tab-button, btn-notificaciones" graphicTextGap="6">
+                <graphic>
+                    <Label text="&#x1F514;" styleClass="bell-icon"/>
+                </graphic>
+            </Button>
         </HBox>
     </top>
     <center>

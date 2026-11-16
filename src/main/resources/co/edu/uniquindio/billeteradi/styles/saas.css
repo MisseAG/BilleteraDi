@@ -349,6 +349,21 @@
     -fx-border-color: #293133;
 }
 
+/* ── Notificaciones ── */
+.btn-notificaciones {
+    -fx-font-weight: bold;
+}
+
+.bell-icon {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1E293B;
+}
+
+.bell-icon-activa {
+    -fx-text-fill: #D97706;
+}
+
 .badge-puntos {
     -fx-text-fill: #6D28D9;
     -fx-font-size: 12px;

@@ -1,10 +1,12 @@
 package co.edu.uniquindio.billeteradi.controller;
 
+import co.edu.uniquindio.billeteradi.model.entity.Notificacion;
 import co.edu.uniquindio.billeteradi.model.entity.Usuario;
 import co.edu.uniquindio.billeteradi.model.enums.TipoBilletera;
 import co.edu.uniquindio.billeteradi.model.repository.PersistenciaJson;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
 import co.edu.uniquindio.billeteradi.model.service.MovimientoService;
+import co.edu.uniquindio.billeteradi.model.service.NotificacionService;
 import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
 import javafx.animation.FadeTransition;
@@ -15,6 +17,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +38,7 @@ public class PrincipalController {
     @FXML private Button btnNavMovimientos;
     @FXML private Button btnNavProgramadas;
     @FXML private Button btnNavReportes;
+    @FXML private Button btnNotificaciones;
 
     @FXML private Node usuariosView;
     @FXML private UsuariosController usuariosViewController;
@@ -49,6 +53,7 @@ public class PrincipalController {
     private UsuarioService usuarioService;
     private MovimientoService movimientoService;
     private RecompensaService recompensaService;
+    private NotificacionService notificacionService;
     private PersistenciaJson persistencia;
 
     private Usuario usuarioActivo;
@@ -58,7 +63,8 @@ public class PrincipalController {
         repositorio = new RepositorioMemoria();
         usuarioService = new UsuarioService(repositorio);
         recompensaService = new RecompensaService(repositorio);
-        movimientoService = new MovimientoService(repositorio, usuarioService, recompensaService);
+        notificacionService = new NotificacionService();
+        movimientoService = new MovimientoService(repositorio, usuarioService, recompensaService, notificacionService);
         persistencia = new PersistenciaJson();
 
         // 1. Cargar datos primero (persistencia JSON o datos semilla)
@@ -154,6 +160,22 @@ public class PrincipalController {
 
         billeterasViewController.setUsuarioActivo(usuarioActivo);
         movimientosViewController.setUsuarioActivo(usuarioActivo);
+        actualizarBadgeNotificaciones();
+    }
+
+    private void actualizarBadgeNotificaciones() {
+        if (btnNotificaciones == null || notificacionService == null || usuarioActivo == null) return;
+        notificacionService.despacharTodas();
+        long noLeidas = notificacionService.contarNoLeidas(usuarioActivo.getId());
+        btnNotificaciones.setText("(" + noLeidas + ")");
+
+        if (btnNotificaciones.getGraphic() != null) {
+            if (noLeidas > 0) {
+                btnNotificaciones.getGraphic().getStyleClass().setAll("bell-icon", "bell-icon-activa");
+            } else {
+                btnNotificaciones.getGraphic().getStyleClass().setAll("bell-icon");
+            }
+        }
     }
 
     private void mostrarVista(Node vista, Button boton) {
@@ -205,6 +227,40 @@ public class PrincipalController {
         }
         mostrarVista(movimientosView, btnNavMovimientos);
         movimientosViewController.refrescar();
+    }
+
+    @FXML
+    private void onVerNotificaciones() {
+        if (usuarioActivo == null) {
+            mostrarAlerta("Seleccione un usuario activo.");
+            return;
+        }
+        notificacionService.despacharTodas();
+        List<Notificacion> lista = notificacionService.obtenerNotificacionesUsuario(usuarioActivo.getId());
+
+        if (lista.isEmpty()) {
+            mostrarExito("No hay notificaciones recientes para " + usuarioActivo.getNombre() + ".");
+            return;
+        }
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM HH:mm:ss");
+        StringBuilder sb = new StringBuilder();
+        for (Notificacion n : lista) {
+            sb.append(n.isLeida() ? "[Leída] " : "[NUEVA] ")
+                    .append(n.getFecha().format(fmt))
+                    .append(" — ")
+                    .append(n.getMensaje())
+                    .append("\n\n");
+        }
+
+        notificacionService.marcarTodasComoLeidas(usuarioActivo.getId());
+        actualizarBadgeNotificaciones();
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Notificaciones Recientes");
+        alert.setHeaderText("Alertas de " + usuarioActivo.getNombre() + " (máx. 20 recientes)");
+        alert.setContentText(sb.toString().trim());
+        alert.showAndWait();
     }
 
     @FXML
