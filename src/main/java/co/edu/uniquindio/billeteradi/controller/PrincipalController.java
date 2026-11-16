@@ -9,6 +9,8 @@ import co.edu.uniquindio.billeteradi.model.service.MovimientoService;
 import co.edu.uniquindio.billeteradi.model.service.NotificacionService;
 import co.edu.uniquindio.billeteradi.model.service.RecompensaService;
 import co.edu.uniquindio.billeteradi.model.service.UsuarioService;
+import co.edu.uniquindio.billeteradi.model.service.AnaliticaService;
+import co.edu.uniquindio.billeteradi.model.service.ProgramacionService;
 import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -47,7 +49,9 @@ public class PrincipalController {
     @FXML private Node movimientosView;
     @FXML private MovimientosController movimientosViewController;
     @FXML private Node programadasView;
+    @FXML private ProgramadasController programadasViewController;
     @FXML private Node reportesView;
+    @FXML private ReportesController reportesViewController;
 
     private RepositorioMemoria repositorio;
     private UsuarioService usuarioService;
@@ -55,6 +59,8 @@ public class PrincipalController {
     private RecompensaService recompensaService;
     private NotificacionService notificacionService;
     private PersistenciaJson persistencia;
+    private AnaliticaService analiticaService;
+    private ProgramacionService programacionService;
 
     private Usuario usuarioActivo;
 
@@ -65,18 +71,22 @@ public class PrincipalController {
         recompensaService = new RecompensaService(repositorio);
         notificacionService = new NotificacionService();
         movimientoService = new MovimientoService(repositorio, usuarioService, recompensaService, notificacionService);
+        analiticaService = new AnaliticaService(repositorio);
+        programacionService = new ProgramacionService(repositorio, movimientoService, notificacionService);
         persistencia = new PersistenciaJson();
 
         // 1. Cargar datos primero (persistencia JSON o datos semilla)
-        if (!persistencia.cargar(repositorio, usuarioService)) {
+        if (!persistencia.cargar(repositorio, usuarioService, programacionService, analiticaService)) {
             cargarDatosSemilla();
-            persistencia.guardar(repositorio);
+            persistencia.guardar(repositorio, programacionService);
         }
 
         // 2. Inyectar servicios a los subcontroladores con datos ya disponibles
         usuariosViewController.initServices(usuarioService, this::onDataChanged);
         billeterasViewController.initServices(usuarioService, this::onDataChanged);
         movimientosViewController.initServices(usuarioService, movimientoService, this::onDataChanged);
+        programadasViewController.initServices(programacionService, usuarioService, this::onDataChanged);
+        reportesViewController.initServices(analiticaService, usuarioService);
 
         // 3. Poblar selector de usuario activo
         refrescarUsuarios();
@@ -98,7 +108,7 @@ public class PrincipalController {
     private void onDataChanged() {
         refrescarUsuarios();
         usuariosViewController.refrescar();
-        persistencia.guardar(repositorio);
+        persistencia.guardar(repositorio, programacionService);
     }
 
     public void refrescarUsuarios() {
@@ -160,6 +170,7 @@ public class PrincipalController {
 
         billeterasViewController.setUsuarioActivo(usuarioActivo);
         movimientosViewController.setUsuarioActivo(usuarioActivo);
+        programadasViewController.setUsuarioActivo(usuarioActivo);
         actualizarBadgeNotificaciones();
     }
 
@@ -265,7 +276,12 @@ public class PrincipalController {
 
     @FXML
     private void onNavProgramadas() {
+        if (usuarioActivo == null) {
+            mostrarAlerta("Seleccione un usuario activo antes de programar operaciones.");
+            return;
+        }
         mostrarVista(programadasView, btnNavProgramadas);
+        programadasViewController.refrescar();
     }
 
     @FXML

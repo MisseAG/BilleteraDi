@@ -7,7 +7,9 @@ import co.edu.uniquindio.billeteradi.model.exception.ReglaNegocioException;
 import co.edu.uniquindio.billeteradi.model.repository.RepositorioMemoria;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue; // O tu estructura de cola/prioridad personalizada
 import static co.edu.uniquindio.billeteradi.model.enums.TipoTransaccion.*;
 
@@ -67,6 +69,26 @@ public class ProgramacionService {
                             " falló: " + e.getMessage());
                 }
             }
+        }
+    }
+
+    public List<OperacionProgramada> listarTodas() {
+        List<OperacionProgramada> todas = new ArrayList<>(pendientes);
+        todas.sort(Comparator.comparing(OperacionProgramada::getFechaEjecucion).reversed());
+        return todas;
+    }
+
+    public long getConsecutivoProgramacion() {
+        return consecutivoProgramacion;
+    }
+
+    public void setConsecutivoProgramacion(long valor) {
+        this.consecutivoProgramacion = valor;
+    }
+
+    public void agregarDirecto(OperacionProgramada op) {
+        if (op.getEstado() == EstadoProgramacion.PENDIENTE) {
+            pendientes.offer(op);
         }
     }
 }

@@ -7,45 +7,45 @@
       xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="co.edu.uniquindio.billeteradi.controller.ReportesController">
 
-    <!-- Cabecera -->
-    <Label text="Reportes y Analítica" styleClass="page-title"/>
-    <Label text="Módulo en desarrollo — Hito 6 (H6)" styleClass="wip-label"/>
+    <Label text="Reportes y Analitica" styleClass="page-title"/>
 
-    <!-- Filtros -->
     <VBox styleClass="content-card" spacing="12">
         <Label text="Filtros de Consulta" styleClass="section-title"/>
         <Separator/>
         <HBox spacing="16" alignment="CENTER_LEFT">
             <VBox spacing="4">
                 <Label text="DESDE" styleClass="form-label"/>
-                <DatePicker fx:id="dpDesde" disable="true"/>
+                <DatePicker fx:id="dpDesde"/>
             </VBox>
             <VBox spacing="4">
                 <Label text="HASTA" styleClass="form-label"/>
-                <DatePicker fx:id="dpHasta" disable="true"/>
+                <DatePicker fx:id="dpHasta"/>
             </VBox>
             <VBox spacing="4">
-                <Label text="MÉTRICA" styleClass="form-label"/>
-                <ComboBox fx:id="cmbMetrica" promptText="Seleccione métrica..." prefWidth="220" disable="true"/>
+                <Label text="TIPO DE REPORTE" styleClass="form-label"/>
+                <ComboBox fx:id="cmbMetrica" promptText="Seleccione reporte..." prefWidth="260"/>
+            </VBox>
+            <VBox spacing="4">
+                <Label text="TOP K" styleClass="form-label"/>
+                <TextField fx:id="txtTopK" promptText="5" prefWidth="70" styleClass="form-field"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Generar Reporte" onAction="#onGenerar" styleClass="accent-button" disable="true"/>
+            <Button text="Generar Reporte" onAction="#onGenerar" styleClass="accent-button"/>
         </HBox>
     </VBox>
 
-    <!-- Resultados -->
     <VBox styleClass="content-card" VBox.vgrow="ALWAYS" spacing="12">
         <Label text="Resultados" styleClass="section-title"/>
         <TableView fx:id="tblResultados" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn text="Métrica" prefWidth="200"/>
-                <TableColumn text="Valor" prefWidth="150"/>
-                <TableColumn text="Detalle" prefWidth="300"/>
+                <TableColumn fx:id="colMetrica" text="Metrica / ID" prefWidth="250"/>
+                <TableColumn fx:id="colValor" text="Conteo / Monto" prefWidth="160"/>
+                <TableColumn fx:id="colDetalle" text="Descripcion" prefWidth="350"/>
             </columns>
-            <placeholder><Label text="Seleccione filtros y genere un reporte — Módulo H6" styleClass="page-subtitle"/></placeholder>
+            <placeholder><Label text="Seleccione un tipo de reporte y presione Generar" styleClass="page-subtitle"/></placeholder>
         </TableView>
         <HBox styleClass="pagination-bar" alignment="CENTER_RIGHT">
-            <Label text="Sin datos" styleClass="pagination-info"/>
+            <Label fx:id="lblRegistrosRep" text="0 registros" styleClass="pagination-info"/>
         </HBox>
     </VBox>
 </VBox>

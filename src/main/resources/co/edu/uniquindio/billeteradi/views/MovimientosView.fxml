@@ -50,8 +50,21 @@
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label text="Historial de Transacciones" styleClass="section-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="btnRevertir" text="Revertir última operación" onAction="#onRevertirUltima" styleClass="danger-button"/>
+                <Button fx:id="btnRevertir" text="Revertir ultima operacion" onAction="#onRevertirUltima" styleClass="danger-button"/>
             </HBox>
+            <VBox spacing="8">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <ComboBox fx:id="cmbFiltroTipo" promptText="Tipo..." prefWidth="130"/>
+                    <ComboBox fx:id="cmbFiltroEstado" promptText="Estado..." prefWidth="130"/>
+                    <ComboBox fx:id="cmbFiltroBilletera" promptText="Billetera..." HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <DatePicker fx:id="dpFiltroDesde" promptText="Desde" prefWidth="130"/>
+                    <DatePicker fx:id="dpFiltroHasta" promptText="Hasta" prefWidth="130"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Limpiar Filtros" onAction="#onLimpiarFiltros" styleClass="tab-button"/>
+                </HBox>
+            </VBox>
             <TableView fx:id="tblTransacciones" VBox.vgrow="ALWAYS">
                 <columns>
                     <TableColumn fx:id="colTxId" text="TX" prefWidth="80"/>
